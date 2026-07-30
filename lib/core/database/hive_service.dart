@@ -4,6 +4,13 @@ import 'package:pharmacy/features/products/data/model/medicine_model.dart';
 import 'package:pharmacy/features/representative_inventory/data/model/representative_inventory_model.dart';
 import 'package:pharmacy/features/representatives/data/model/representative_model.dart';
 import 'package:pharmacy/features/sales/data/model/sale_model.dart';
+import 'package:pharmacy/features/customers/data/model/customer_model.dart';
+import 'package:pharmacy/features/customers/data/model/customer_debt_model.dart';
+import 'package:pharmacy/features/customers/data/model/customer_payment_model.dart';
+import 'package:pharmacy/features/suppliers/data/model/supplier_model.dart';
+import 'package:pharmacy/features/purchases/data/model/purchase_model.dart';
+import 'package:pharmacy/features/suppliers/data/model/supplier_debt_model.dart';
+import 'package:pharmacy/features/suppliers/data/model/supplier_payment_model.dart';
 
 class HiveService {
   HiveService._();
@@ -23,6 +30,20 @@ class HiveService {
     if (!Hive.isAdapterRegistered(3)) {
       Hive.registerAdapter(SaleModelAdapter());
     }
+    if (!Hive.isAdapterRegistered(4))
+      Hive.registerAdapter(CustomerModelAdapter());
+    if (!Hive.isAdapterRegistered(5))
+      Hive.registerAdapter(CustomerDebtModelAdapter());
+    if (!Hive.isAdapterRegistered(6))
+      Hive.registerAdapter(CustomerPaymentModelAdapter());
+    if (!Hive.isAdapterRegistered(7))
+      Hive.registerAdapter(SupplierModelAdapter());
+    if (!Hive.isAdapterRegistered(8))
+      Hive.registerAdapter(PurchaseModelAdapter());
+    if (!Hive.isAdapterRegistered(9))
+      Hive.registerAdapter(SupplierDebtModelAdapter());
+    if (!Hive.isAdapterRegistered(10))
+      Hive.registerAdapter(SupplierPaymentModelAdapter());
 
     await Future.wait([
       Hive.openBox<MedicineModel>(HiveBoxes.products),
@@ -31,6 +52,13 @@ class HiveService {
         HiveBoxes.representativeInventory,
       ),
       Hive.openBox<SaleModel>(HiveBoxes.sales),
+      Hive.openBox<CustomerModel>(HiveBoxes.customers),
+      Hive.openBox<CustomerDebtModel>(HiveBoxes.customerDebts),
+      Hive.openBox<CustomerPaymentModel>(HiveBoxes.customerPayments),
+      Hive.openBox<SupplierModel>(HiveBoxes.suppliers),
+      Hive.openBox<PurchaseModel>(HiveBoxes.purchases),
+      Hive.openBox<SupplierDebtModel>(HiveBoxes.supplierDebts),
+      Hive.openBox<SupplierPaymentModel>(HiveBoxes.supplierPayments),
     ]);
   }
 
@@ -42,6 +70,13 @@ class HiveService {
         HiveBoxes.representativeInventory,
       ).clear(),
       Hive.box<SaleModel>(HiveBoxes.sales).clear(),
+      Hive.box<CustomerModel>(HiveBoxes.customers).clear(),
+      Hive.box<CustomerDebtModel>(HiveBoxes.customerDebts).clear(),
+      Hive.box<CustomerPaymentModel>(HiveBoxes.customerPayments).clear(),
+      Hive.box<SupplierModel>(HiveBoxes.suppliers).clear(),
+      Hive.box<PurchaseModel>(HiveBoxes.purchases).clear(),
+      Hive.box<SupplierDebtModel>(HiveBoxes.supplierDebts).clear(),
+      Hive.box<SupplierPaymentModel>(HiveBoxes.supplierPayments).clear(),
     ]);
   }
 }

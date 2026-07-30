@@ -14,7 +14,8 @@ class CreateDirectSaleUseCase {
 
   final SalesRepository repository;
 
-  Future<void> call(SaleModel sale) => repository.createDirectSale(sale);
+  Future<void> call(List<SaleModel> sales) =>
+      repository.createDirectSales(sales);
 }
 
 class CreateRepresentativeSaleUseCase {
@@ -22,8 +23,8 @@ class CreateRepresentativeSaleUseCase {
 
   final SalesRepository repository;
 
-  Future<void> call(SaleModel sale) =>
-      repository.createRepresentativeSale(sale);
+  Future<void> call(List<SaleModel> sales) =>
+      repository.createRepresentativeSales(sales);
 }
 
 class SearchAndFilterSalesUseCase {
@@ -43,4 +44,12 @@ class SearchAndFilterSalesUseCase {
     }
     return sales.where((sale) => sale.saleType == saleType).toList();
   }
+}
+
+class CancelSaleInvoiceUseCase {
+  const CancelSaleInvoiceUseCase(this.repository);
+
+  final SalesRepository repository;
+
+  Future<void> call(String invoiceId) => repository.cancelInvoice(invoiceId);
 }

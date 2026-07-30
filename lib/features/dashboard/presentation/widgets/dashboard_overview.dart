@@ -5,8 +5,27 @@ import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_state.
 import 'package:pharmacy/widgets/app_formatters.dart';
 import 'package:pharmacy/widgets/app_stat_card.dart';
 
-class DashboardOverview extends StatelessWidget {
+class DashboardOverview extends StatefulWidget {
   const DashboardOverview({super.key});
+  @override
+  State<DashboardOverview> createState() => _DashboardOverviewState();
+}
+
+class _DashboardOverviewState extends State<DashboardOverview> {
+  DateTime _selectedDate = DateTime.now();
+
+  Future<void> _pickDate() async {
+    final selected = await showDatePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDate: _selectedDate,
+    );
+    if (selected != null && mounted) {
+      setState(() => _selectedDate = selected);
+      context.read<DashboardCubit>().load(date: selected);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +43,50 @@ class DashboardOverview extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Spacer(),
+                  SegmentedButton<int>(
+                    segments: const [
+                      ButtonSegment(value: 0, label: Text('Today')),
+                      ButtonSegment(value: 1, label: Text('Yesterday')),
+                      ButtonSegment(value: 2, label: Text('Date')),
+                    ],
+                    selected: {
+                      _selectedDate.day == DateTime.now().day &&
+                              _selectedDate.month == DateTime.now().month &&
+                              _selectedDate.year == DateTime.now().year
+                          ? 0
+                          : _selectedDate.day ==
+                                    DateTime.now()
+                                        .subtract(const Duration(days: 1))
+                                        .day &&
+                                _selectedDate.month ==
+                                    DateTime.now()
+                                        .subtract(const Duration(days: 1))
+                                        .month &&
+                                _selectedDate.year ==
+                                    DateTime.now()
+                                        .subtract(const Duration(days: 1))
+                                        .year
+                          ? 1
+                          : 2,
+                    },
+                    onSelectionChanged: (value) {
+                      if (value.first == 2) {
+                        _pickDate();
+                      } else {
+                        final date = DateTime.now().subtract(
+                          Duration(days: value.first),
+                        );
+                        setState(() => _selectedDate = date);
+                        context.read<DashboardCubit>().load(date: date);
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 12),
                   IconButton.filledTonal(
                     tooltip: 'Refresh',
-                    onPressed: () => context.read<DashboardCubit>().load(),
+                    onPressed: () => context.read<DashboardCubit>().load(
+                      date: _selectedDate,
+                    ),
                     icon: const Icon(Icons.refresh),
                   ),
                 ],
@@ -95,6 +155,34 @@ class DashboardOverview extends StatelessWidget {
                                   value: state.stats.lowStockProducts.length
                                       .toString(),
                                   icon: Icons.warning_amber_outlined,
+                                ),
+                                AppStatCard(
+                                  title: 'Customer debts',
+                                  value: AppFormatters.compactCurrency.format(
+                                    state.stats.outstandingCustomerDebts,
+                                  ),
+                                  icon: Icons.account_balance_wallet_outlined,
+                                ),
+                                AppStatCard(
+                                  title: 'Supplier debts',
+                                  value: AppFormatters.compactCurrency.format(
+                                    state.stats.outstandingSupplierDebts,
+                                  ),
+                                  icon: Icons.receipt_long_outlined,
+                                ),
+                                AppStatCard(
+                                  title: "Today's collections",
+                                  value: AppFormatters.compactCurrency.format(
+                                    state.stats.todayCollections,
+                                  ),
+                                  icon: Icons.payments_outlined,
+                                ),
+                                AppStatCard(
+                                  title: "Today's payments",
+                                  value: AppFormatters.compactCurrency.format(
+                                    state.stats.todayPayments,
+                                  ),
+                                  icon: Icons.outbox_outlined,
                                 ),
                               ],
                             );

@@ -13,4 +13,7 @@ class AppFormatters {
   );
   static final date = DateFormat('yyyy-MM-dd');
   static final dateTime = DateFormat('yyyy-MM-dd HH:mm');
+
+  static String invoiceNumber(String id) =>
+      'INV-${id.replaceAll('-', '').substring(0, 8).toUpperCase()}';
 }

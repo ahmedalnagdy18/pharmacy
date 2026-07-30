@@ -6,5 +6,6 @@ class GetDashboardStatsUseCase {
 
   final DashboardRepository repository;
 
-  Future<DashboardStatsModel> call() => repository.getStats();
+  Future<DashboardStatsModel> call({DateTime? date}) =>
+      repository.getStats(date: date);
 }

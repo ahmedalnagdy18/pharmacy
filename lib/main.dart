@@ -10,6 +10,9 @@ import 'package:pharmacy/features/representative_inventory/presentation/cubits/r
 import 'package:pharmacy/features/representatives/presentation/cubits/representatives_cubit.dart';
 import 'package:pharmacy/features/reports/domain/usecases/report_usecases.dart';
 import 'package:pharmacy/features/sales/presentation/cubits/sales_cubit.dart';
+import 'package:pharmacy/features/customers/presentation/cubits/customers_cubit.dart';
+import 'package:pharmacy/features/suppliers/presentation/cubits/suppliers_cubit.dart';
+import 'package:pharmacy/features/purchases/presentation/cubits/purchases_cubit.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +56,7 @@ class MyApp extends StatelessWidget {
               getSales: dependencies.getSales,
               createDirectSale: dependencies.createDirectSale,
               createRepresentativeSale: dependencies.createRepresentativeSale,
+              cancelSaleInvoice: dependencies.cancelSaleInvoice,
               searchAndFilterSales: dependencies.searchAndFilterSales,
             )..load(),
           ),
@@ -62,6 +66,18 @@ class MyApp extends StatelessWidget {
           ),
           BlocProvider(
             create: (_) => AppDataCubit(dependencies.clearAppData),
+          ),
+          BlocProvider(
+            create: (_) =>
+                CustomersCubit(dependencies.customerUseCases)..load(),
+          ),
+          BlocProvider(
+            create: (_) =>
+                SuppliersCubit(dependencies.supplierUseCases)..load(),
+          ),
+          BlocProvider(
+            create: (_) =>
+                PurchasesCubit(dependencies.purchaseUseCases)..load(),
           ),
         ],
         child: MaterialApp(

@@ -70,6 +70,40 @@ class ReportsPage extends StatelessWidget {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: AppStatCard(
+                                title: 'Customer debt report',
+                                value: AppFormatters.currency.format(
+                                  state.stats.outstandingCustomerDebts,
+                                ),
+                                icon: Icons.account_balance_wallet_outlined,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: AppStatCard(
+                                title: 'Supplier debt report',
+                                value: AppFormatters.currency.format(
+                                  state.stats.outstandingSupplierDebts,
+                                ),
+                                icon: Icons.receipt_long_outlined,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: AppStatCard(
+                                title: 'Collections today',
+                                value: AppFormatters.currency.format(
+                                  state.stats.todayCollections,
+                                ),
+                                icon: Icons.payments_outlined,
+                              ),
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 16),
                         _ReportTable(
                           title: 'Top medicines',

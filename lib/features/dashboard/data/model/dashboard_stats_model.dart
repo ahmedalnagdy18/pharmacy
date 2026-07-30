@@ -42,6 +42,10 @@ class DashboardStatsModel extends Equatable {
     required this.lowStockProducts,
     required this.topSellingMedicines,
     required this.topRepresentatives,
+    required this.outstandingCustomerDebts,
+    required this.outstandingSupplierDebts,
+    required this.todayCollections,
+    required this.todayPayments,
   });
 
   final int totalProducts;
@@ -52,6 +56,10 @@ class DashboardStatsModel extends Equatable {
   final List<MedicineModel> lowStockProducts;
   final List<MedicineSalesSummary> topSellingMedicines;
   final List<RepresentativeSalesSummary> topRepresentatives;
+  final double outstandingCustomerDebts;
+  final double outstandingSupplierDebts;
+  final double todayCollections;
+  final double todayPayments;
 
   @override
   List<Object?> get props => [
@@ -63,5 +71,9 @@ class DashboardStatsModel extends Equatable {
     lowStockProducts,
     topSellingMedicines,
     topRepresentatives,
+    outstandingCustomerDebts,
+    outstandingSupplierDebts,
+    todayCollections,
+    todayPayments,
   ];
 }

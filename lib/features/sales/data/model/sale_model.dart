@@ -18,6 +18,11 @@ class SaleModel extends Equatable {
     required this.date,
     required this.saleType,
     required this.representativeId,
+    this.customerId,
+    this.customerName,
+    this.customerPhone,
+    this.invoiceId,
+    this.amountPaid,
   });
 
   final String id;
@@ -28,6 +33,11 @@ class SaleModel extends Equatable {
   final DateTime date;
   final String saleType;
   final String? representativeId;
+  final String? customerId;
+  final String? customerName;
+  final String? customerPhone;
+  final String? invoiceId;
+  final double? amountPaid;
 
   SaleModel copyWith({
     String? id,
@@ -38,6 +48,11 @@ class SaleModel extends Equatable {
     DateTime? date,
     String? saleType,
     String? representativeId,
+    String? customerId,
+    String? customerName,
+    String? customerPhone,
+    String? invoiceId,
+    double? amountPaid,
   }) {
     return SaleModel(
       id: id ?? this.id,
@@ -48,6 +63,11 @@ class SaleModel extends Equatable {
       date: date ?? this.date,
       saleType: saleType ?? this.saleType,
       representativeId: representativeId ?? this.representativeId,
+      customerId: customerId ?? this.customerId,
+      customerName: customerName ?? this.customerName,
+      customerPhone: customerPhone ?? this.customerPhone,
+      invoiceId: invoiceId ?? this.invoiceId,
+      amountPaid: amountPaid ?? this.amountPaid,
     );
   }
 
@@ -61,6 +81,11 @@ class SaleModel extends Equatable {
     date,
     saleType,
     representativeId,
+    customerId,
+    customerName,
+    customerPhone,
+    invoiceId,
+    amountPaid,
   ];
 }
 
@@ -83,13 +108,18 @@ class SaleModelAdapter extends TypeAdapter<SaleModel> {
       date: fields[5] as DateTime,
       saleType: fields[6] as String,
       representativeId: fields[7] as String?,
+      customerId: fields[8] as String?,
+      customerName: fields[9] as String?,
+      customerPhone: fields[10] as String?,
+      invoiceId: fields[11] as String?,
+      amountPaid: fields[12] as double?,
     );
   }
 
   @override
   void write(BinaryWriter writer, SaleModel obj) {
     writer
-      ..writeByte(8)
+      ..writeByte(13)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -105,6 +135,16 @@ class SaleModelAdapter extends TypeAdapter<SaleModel> {
       ..writeByte(6)
       ..write(obj.saleType)
       ..writeByte(7)
-      ..write(obj.representativeId);
+      ..write(obj.representativeId)
+      ..writeByte(8)
+      ..write(obj.customerId)
+      ..writeByte(9)
+      ..write(obj.customerName)
+      ..writeByte(10)
+      ..write(obj.customerPhone)
+      ..writeByte(11)
+      ..write(obj.invoiceId)
+      ..writeByte(12)
+      ..write(obj.amountPaid);
   }
 }

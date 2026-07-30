@@ -6,16 +6,39 @@ import 'package:pharmacy/features/products/presentation/cubits/products_state.da
 import 'package:pharmacy/features/products/presentation/widgets/product_dialog.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
 
-class ProductsPage extends StatelessWidget {
+class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
+
+  @override
+  State<ProductsPage> createState() => _ProductsPageState();
+}
+
+class _ProductsPageState extends State<ProductsPage> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<ProductsCubit, ProductsState>(
       builder: (context, state) {
-        final products = state is ProductsLoaded
+        final allProducts = state is ProductsLoaded
             ? state.products
             : const <MedicineModel>[];
+        final query = _searchController.text.trim().toLowerCase();
+        final products = allProducts
+            .where(
+              (product) =>
+                  query.isEmpty ||
+                  product.name.toLowerCase().contains(query) ||
+                  product.barcode.toLowerCase().contains(query) ||
+                  product.category.toLowerCase().contains(query),
+            )
+            .toList();
         return Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -42,6 +65,15 @@ class ProductsPage extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
+              TextField(
+                controller: _searchController,
+                onChanged: (_) => setState(() {}),
+                decoration: const InputDecoration(
+                  prefixIcon: Icon(Icons.search),
+                  labelText: 'Search by medicine, barcode, or category',
+                ),
+              ),
+              const SizedBox(height: 12),
               if (state is ProductsLoading)
                 const LinearProgressIndicator()
               else

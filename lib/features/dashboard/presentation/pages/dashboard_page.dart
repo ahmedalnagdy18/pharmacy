@@ -18,6 +18,12 @@ import 'package:pharmacy/features/reports/presentation/pages/reports_page.dart';
 import 'package:pharmacy/features/sales/presentation/cubits/sales_cubit.dart';
 import 'package:pharmacy/features/sales/presentation/cubits/sales_state.dart';
 import 'package:pharmacy/features/sales/presentation/pages/sales_page.dart';
+import 'package:pharmacy/features/customers/presentation/pages/customers_page.dart';
+import 'package:pharmacy/features/customers/presentation/cubits/customers_cubit.dart';
+import 'package:pharmacy/features/suppliers/presentation/pages/suppliers_page.dart';
+import 'package:pharmacy/features/suppliers/presentation/cubits/suppliers_cubit.dart';
+import 'package:pharmacy/features/purchases/presentation/pages/purchases_page.dart';
+import 'package:pharmacy/features/purchases/presentation/cubits/purchases_cubit.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -35,6 +41,9 @@ class _DashboardPageState extends State<DashboardPage> {
     RepresentativesPage(),
     RepresentativeInventoryPage(),
     SalesPage(),
+    CustomersPage(),
+    SuppliersPage(),
+    PurchasesPage(),
     ReportsPage(),
   ];
 
@@ -149,6 +158,21 @@ class _DashboardPageState extends State<DashboardPage> {
                   label: Text('Sales'),
                 ),
                 NavigationRailDestination(
+                  icon: Icon(Icons.people_outline),
+                  selectedIcon: Icon(Icons.people),
+                  label: Text('Customers'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.local_shipping_outlined),
+                  selectedIcon: Icon(Icons.local_shipping),
+                  label: Text('Suppliers'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.shopping_cart_outlined),
+                  selectedIcon: Icon(Icons.shopping_cart),
+                  label: Text('Purchases'),
+                ),
+                NavigationRailDestination(
                   icon: Icon(Icons.assessment_outlined),
                   selectedIcon: Icon(Icons.assessment),
                   label: Text('Reports'),
@@ -167,7 +191,7 @@ class _DashboardPageState extends State<DashboardPage> {
     setState(() => _selectedIndex = index);
     switch (index) {
       case 0:
-      case 5:
+      case 8:
         context.read<DashboardCubit>().load();
         break;
       case 1:
@@ -186,6 +210,17 @@ class _DashboardPageState extends State<DashboardPage> {
         context.read<ProductsCubit>().load();
         context.read<RepresentativesCubit>().load();
         context.read<RepresentativeInventoryCubit>().load();
+        break;
+      case 5:
+        context.read<CustomersCubit>().load();
+        break;
+      case 6:
+        context.read<SuppliersCubit>().load();
+        break;
+      case 7:
+        context.read<PurchasesCubit>().load();
+        context.read<ProductsCubit>().load();
+        context.read<SuppliersCubit>().load();
         break;
     }
   }
@@ -221,6 +256,9 @@ class _DashboardPageState extends State<DashboardPage> {
     context.read<RepresentativesCubit>().load();
     context.read<RepresentativeInventoryCubit>().load();
     context.read<SalesCubit>().load();
+    context.read<CustomersCubit>().load();
+    context.read<SuppliersCubit>().load();
+    context.read<PurchasesCubit>().load();
     context.read<DashboardCubit>().load();
   }
 

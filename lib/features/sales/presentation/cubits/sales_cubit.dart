@@ -9,12 +9,14 @@ class SalesCubit extends Cubit<SalesState> {
     required this.getSales,
     required this.createDirectSale,
     required this.createRepresentativeSale,
+    required this.cancelSaleInvoice,
     required this.searchAndFilterSales,
   }) : super(const SalesInitial());
 
   final GetSalesUseCase getSales;
   final CreateDirectSaleUseCase createDirectSale;
   final CreateRepresentativeSaleUseCase createRepresentativeSale;
+  final CancelSaleInvoiceUseCase cancelSaleInvoice;
   final SearchAndFilterSalesUseCase searchAndFilterSales;
   final _uuid = const Uuid();
 
@@ -43,24 +45,34 @@ class SalesCubit extends Cubit<SalesState> {
     }
   }
 
-  Future<void> addDirectSale({
-    required String productId,
-    required int quantity,
-    required double unitPrice,
+  Future<void> addDirectSales({
+    required List<SaleLine> lines,
+    String? customerName,
+    String? customerPhone,
+    required double amountPaid,
   }) async {
     emit(const SalesLoading());
     try {
+      final invoiceId = _uuid.v4();
       await createDirectSale(
-        SaleModel(
-          id: _uuid.v4(),
-          productId: productId,
-          quantity: quantity,
-          unitPrice: unitPrice,
-          total: quantity * unitPrice,
-          date: DateTime.now(),
-          saleType: SaleType.direct,
-          representativeId: null,
-        ),
+        lines
+            .map(
+              (line) => SaleModel(
+                id: _uuid.v4(),
+                productId: line.productId,
+                quantity: line.quantity,
+                unitPrice: line.unitPrice,
+                total: line.quantity * line.unitPrice,
+                date: DateTime.now(),
+                saleType: SaleType.direct,
+                representativeId: null,
+                invoiceId: invoiceId,
+                customerName: customerName,
+                customerPhone: customerPhone,
+                amountPaid: amountPaid,
+              ),
+            )
+            .toList(),
       );
       emit(SalesLoaded(await getSales()));
     } catch (error) {
@@ -69,25 +81,29 @@ class SalesCubit extends Cubit<SalesState> {
     }
   }
 
-  Future<void> addRepresentativeSale({
+  Future<void> addRepresentativeSales({
     required String representativeId,
-    required String productId,
-    required int quantity,
-    required double unitPrice,
+    required List<SaleLine> lines,
   }) async {
     emit(const SalesLoading());
     try {
+      final invoiceId = _uuid.v4();
       await createRepresentativeSale(
-        SaleModel(
-          id: _uuid.v4(),
-          productId: productId,
-          quantity: quantity,
-          unitPrice: unitPrice,
-          total: quantity * unitPrice,
-          date: DateTime.now(),
-          saleType: SaleType.representative,
-          representativeId: representativeId,
-        ),
+        lines
+            .map(
+              (line) => SaleModel(
+                id: _uuid.v4(),
+                productId: line.productId,
+                quantity: line.quantity,
+                unitPrice: line.unitPrice,
+                total: line.quantity * line.unitPrice,
+                date: DateTime.now(),
+                saleType: SaleType.representative,
+                representativeId: representativeId,
+                invoiceId: invoiceId,
+              ),
+            )
+            .toList(),
       );
       emit(SalesLoaded(await getSales()));
     } catch (error) {
@@ -95,4 +111,27 @@ class SalesCubit extends Cubit<SalesState> {
       await load();
     }
   }
+
+  Future<void> cancelInvoice(String invoiceId) async {
+    emit(const SalesLoading());
+    try {
+      await cancelSaleInvoice(invoiceId);
+      emit(SalesLoaded(await getSales()));
+    } catch (error) {
+      emit(SalesError(error.toString()));
+      await load();
+    }
+  }
+}
+
+class SaleLine {
+  const SaleLine({
+    required this.productId,
+    required this.quantity,
+    required this.unitPrice,
+  });
+
+  final String productId;
+  final int quantity;
+  final double unitPrice;
 }

@@ -6,6 +6,7 @@ abstract class SalesRepository {
   Future<List<SaleModel>> getMonthlySales(DateTime month);
   Future<List<SaleModel>> searchSales(String query);
   Future<List<SaleModel>> filterSales(String? saleType);
-  Future<void> createDirectSale(SaleModel sale);
-  Future<void> createRepresentativeSale(SaleModel sale);
+  Future<void> createDirectSales(List<SaleModel> sales);
+  Future<void> createRepresentativeSales(List<SaleModel> sales);
+  Future<void> cancelInvoice(String invoiceId);
 }

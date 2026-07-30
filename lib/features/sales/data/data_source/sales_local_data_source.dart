@@ -14,4 +14,6 @@ class SalesLocalDataSource {
   Future<void> save(SaleModel sale) async {
     await box.put(sale.id, sale);
   }
+
+  Future<void> delete(String id) => box.delete(id);
 }
