@@ -14,80 +14,86 @@ class InvoicePdfService {
     Map<String, MedicineModel> products,
     RepresentativeModel? representative,
   ) async {
-    final document = pw.Document();
+    final baseFont = await PdfGoogleFonts.cairoRegular();
+    final boldFont = await PdfGoogleFonts.cairoBold();
+    final document = pw.Document(
+      theme: pw.ThemeData.withFont(base: baseFont, bold: boldFont),
+    );
     final sale = sales.first;
     final total = sales.fold<double>(0, (sum, item) => sum + item.total);
-    final paid = sales.fold<double>(
-      0,
-      (sum, item) => sum + (item.amountPaid ?? item.total),
-    );
+    final paid = sale.amountPaid ?? total;
     final remaining = total - paid;
     document.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        build: (_) => pw.Padding(
-          padding: const pw.EdgeInsets.all(32),
-          child: pw.Column(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
-            children: [
-              pw.Text(
-                'Pharmacy Inventory',
-                style: pw.TextStyle(
-                  fontSize: 24,
-                  fontWeight: pw.FontWeight.bold,
+        build: (_) => pw.Directionality(
+          textDirection: pw.TextDirection.rtl,
+          child: pw.Padding(
+            padding: const pw.EdgeInsets.all(32),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(
+                  'مرعى مستحضرات تجميل',
+                  style: pw.TextStyle(
+                    fontSize: 24,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
                 ),
-              ),
-              pw.SizedBox(height: 8),
-              pw.Text(
-                'Invoice ${AppFormatters.invoiceNumber(sale.invoiceId ?? sale.id)}',
-              ),
-              pw.Text('Date: ${sale.date}'),
-              pw.Divider(),
-              pw.Text('Customer: ${sale.customerName ?? 'Walk-in customer'}'),
-              pw.Text('Phone: ${sale.customerPhone ?? '-'}'),
-              if (representative != null)
-                pw.Text('Representative: ${representative.name}'),
-              pw.SizedBox(height: 20),
-              pw.Table.fromTextArray(
-                headers: const ['Medicine', 'Quantity', 'Unit price', 'Total'],
-                data: sales
-                    .map(
-                      (item) => [
-                        products[item.productId]?.name ?? 'Unknown product',
-                        '${item.quantity}',
-                        item.unitPrice.toStringAsFixed(2),
-                        item.total.toStringAsFixed(2),
-                      ],
-                    )
-                    .toList(),
-              ),
-              pw.SizedBox(height: 20),
-              pw.Align(
-                alignment: pw.Alignment.centerRight,
-                child: pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.end,
-                  children: [
-                    pw.Text('Subtotal: ${total.toStringAsFixed(2)} EGP'),
-                    pw.Text('Discount: 0.00 EGP'),
-                    pw.Text(
-                      'Grand total: ${total.toStringAsFixed(2)} EGP',
-                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                    ),
-                    pw.Text(
-                      'Paid: ${paid.toStringAsFixed(2)} EGP',
-                    ),
-                    pw.Text('Remaining: ${remaining.toStringAsFixed(2)} EGP'),
-                    pw.Text(
-                      remaining <= 0
-                          ? 'Payment status: Paid'
-                          : 'Payment status: Pending',
-                    ),
-                  ],
+                pw.SizedBox(height: 8),
+                pw.Text(
+                  'فاتورة رقم ${AppFormatters.invoiceNumber(sale.invoiceId ?? sale.id)}',
                 ),
-              ),
-              pw.Spacer(),
-              pw.Center(child: pw.Text('Thank you for your business.')),
-            ],
+                pw.Text('التاريخ: ${AppFormatters.dateTime.format(sale.date)}'),
+                pw.Text('الهاتف: 01024521310'),
+                pw.Divider(),
+                pw.Text('العميل: ${sale.customerName ?? 'عميل نقدي'}'),
+                pw.Text('هاتف العميل: ${sale.customerPhone ?? '-'}'),
+                if (representative != null)
+                  pw.Text('المندوب: ${representative.name}'),
+                pw.SizedBox(height: 20),
+                pw.TableHelper.fromTextArray(
+                  headers: const ['المنتج', 'الكمية', 'سعر الوحدة', 'الاجمالي'],
+                  data: sales
+                      .map(
+                        (item) => [
+                          products[item.productId]?.name ?? 'منتج غير معروف',
+                          '${item.quantity}',
+                          item.unitPrice.toStringAsFixed(2),
+                          item.total.toStringAsFixed(2),
+                        ],
+                      )
+                      .toList(),
+                ),
+                pw.SizedBox(height: 20),
+                pw.Align(
+                  alignment: pw.Alignment.centerRight,
+                  child: pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text(
+                        'الإجمالي الفرعي: ${total.toStringAsFixed(2)} ج.م',
+                      ),
+                      pw.Text(
+                        'الإجمالي: ${total.toStringAsFixed(2)} ج.م',
+                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.Text(
+                        'المدفوع: ${paid.toStringAsFixed(2)} ج.م',
+                      ),
+                      pw.Text('المتبقي: ${remaining.toStringAsFixed(2)} ج.م'),
+                      pw.Text(
+                        remaining <= 0
+                            ? 'حالة الدفع: مدفوع'
+                            : 'حالة الدفع: متبقي',
+                      ),
+                    ],
+                  ),
+                ),
+                pw.Spacer(),
+                pw.Center(child: pw.Text('شكرًا لتعاملكم معنا')),
+              ],
+            ),
           ),
         ),
       ),

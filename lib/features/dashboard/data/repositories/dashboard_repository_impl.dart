@@ -42,14 +42,16 @@ class DashboardRepositoryImpl implements DashboardRepository {
       0,
       (sum, product) => sum + product.quantity * product.purchasePrice,
     );
-    final filteredSales = sales
-        .where(
-          (sale) =>
-              sale.date.year == now.year &&
-              sale.date.month == now.month &&
-              sale.date.day == now.day,
-        )
-        .toList();
+    final filteredSales = date == null
+        ? sales
+        : sales
+              .where(
+                (sale) =>
+                    sale.date.year == now.year &&
+                    sale.date.month == now.month &&
+                    sale.date.day == now.day,
+              )
+              .toList();
     final todaySales = filteredSales
         .where(
           (sale) =>
@@ -58,11 +60,15 @@ class DashboardRepositoryImpl implements DashboardRepository {
               sale.date.day == now.day,
         )
         .fold<double>(0, (sum, sale) => sum + sale.total);
-    final monthlySales = sales
-        .where(
-          (sale) => sale.date.year == now.year && sale.date.month == now.month,
-        )
-        .fold<double>(0, (sum, sale) => sum + sale.total);
+    final monthlySales =
+        (date == null
+                ? sales
+                : sales.where(
+                    (sale) =>
+                        sale.date.year == now.year &&
+                        sale.date.month == now.month,
+                  ))
+            .fold<double>(0, (sum, sale) => sum + sale.total);
 
     final productById = {for (final product in products) product.id: product};
     final representativeById = {
@@ -149,17 +155,19 @@ class DashboardRepositoryImpl implements DashboardRepository {
       todayCollections: customerPayments
           .where(
             (x) =>
-                x.date.year == now.year &&
-                x.date.month == now.month &&
-                x.date.day == now.day,
+                date == null ||
+                (x.date.year == now.year &&
+                    x.date.month == now.month &&
+                    x.date.day == now.day),
           )
           .fold<double>(0, (sum, x) => sum + x.amount),
       todayPayments: supplierPayments
           .where(
             (x) =>
-                x.date.year == now.year &&
-                x.date.month == now.month &&
-                x.date.day == now.day,
+                date == null ||
+                (x.date.year == now.year &&
+                    x.date.month == now.month &&
+                    x.date.day == now.day),
           )
           .fold<double>(0, (sum, x) => sum + x.amount),
     );

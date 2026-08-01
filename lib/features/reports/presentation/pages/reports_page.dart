@@ -4,9 +4,18 @@ import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_cubit.
 import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_state.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
 import 'package:pharmacy/widgets/app_stat_card.dart';
+import 'package:pharmacy/widgets/date_filter_bar.dart';
 
-class ReportsPage extends StatelessWidget {
+class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
+
+  @override
+  State<ReportsPage> createState() => _ReportsPageState();
+}
+
+class _ReportsPageState extends State<ReportsPage> {
+  DateFilter _dateFilter = DateFilter.today;
+  DateTime? _customDate;
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +33,21 @@ class ReportsPage extends StatelessWidget {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Spacer(),
+                  DateFilterBar(
+                    value: _dateFilter,
+                    customDate: _customDate,
+                    onChanged: (selection) {
+                      setState(() {
+                        _dateFilter = selection.filter;
+                        _customDate = selection.customDate;
+                      });
+                      _loadStats();
+                    },
+                  ),
+                  const SizedBox(width: 12),
                   IconButton.filledTonal(
                     tooltip: 'Refresh',
-                    onPressed: () => context.read<DashboardCubit>().load(),
+                    onPressed: _loadStats,
                     icon: const Icon(Icons.refresh),
                   ),
                 ],
@@ -148,6 +169,19 @@ class ReportsPage extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  void _loadStats() {
+    final date = switch (_dateFilter) {
+      DateFilter.today => DateTime.now(),
+      DateFilter.yesterday => DateTime.now().subtract(const Duration(days: 1)),
+      DateFilter.custom => _customDate ?? DateTime.now(),
+      DateFilter.allTime => null,
+    };
+    context.read<DashboardCubit>().load(
+      date: date,
+      allTime: _dateFilter == DateFilter.allTime,
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:pharmacy/features/customers/presentation/cubits/customers_cubit.
 import 'package:pharmacy/features/customers/presentation/cubits/customers_state.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
 import 'package:pharmacy/features/sales/presentation/cubits/sales_cubit.dart';
+import 'package:pharmacy/widgets/date_filter_bar.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
@@ -15,6 +16,9 @@ class CustomersPage extends StatefulWidget {
 
 class _CustomersPageState extends State<CustomersPage> {
   final _search = TextEditingController();
+  DateFilter _dateFilter = DateFilter.allTime;
+  DateTime? _customDate;
+  bool _showDebtorsOnly = false;
   @override
   void dispose() {
     _search.dispose();
@@ -35,6 +39,39 @@ class _CustomersPageState extends State<CustomersPage> {
                 c.name.toLowerCase().contains(q) ||
                 c.phone.contains(q),
           )
+          .where((customer) {
+            final debts =
+                data?.debts
+                    .where((debt) => debt.customerId == customer.id)
+                    .toList() ??
+                [];
+            final payments =
+                data?.payments
+                    .where((payment) => payment.customerId == customer.id)
+                    .toList() ??
+                [];
+            final hasDebt = debts.any(
+              (debt) =>
+                  debt.status == DebtStatus.pending && debt.remainingAmount > 0,
+            );
+            final hasActivity =
+                _dateFilter == DateFilter.allTime ||
+                debts.any(
+                  (debt) => matchesDateFilter(
+                    debt.createdAt,
+                    _dateFilter,
+                    _customDate,
+                  ),
+                ) ||
+                payments.any(
+                  (payment) => matchesDateFilter(
+                    payment.date,
+                    _dateFilter,
+                    _customDate,
+                  ),
+                );
+            return (!_showDebtorsOnly || hasDebt) && hasActivity;
+          })
           .toList();
       return Padding(
         padding: const EdgeInsets.all(24),
@@ -68,6 +105,28 @@ class _CustomersPageState extends State<CustomersPage> {
                 prefixIcon: Icon(Icons.search),
                 labelText: 'Search by customer name or phone',
               ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: DateFilterBar(
+                    value: _dateFilter,
+                    customDate: _customDate,
+                    onChanged: (selection) => setState(() {
+                      _dateFilter = selection.filter;
+                      _customDate = selection.customDate;
+                    }),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                FilterChip(
+                  label: const Text('Has outstanding debt'),
+                  selected: _showDebtorsOnly,
+                  onSelected: (selected) =>
+                      setState(() => _showDebtorsOnly = selected),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             if (state is CustomersLoading) const LinearProgressIndicator(),

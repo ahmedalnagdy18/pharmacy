@@ -7,10 +7,16 @@ class DashboardCubit extends Cubit<DashboardState> {
 
   final GetDashboardStatsUseCase getDashboardStats;
 
-  Future<void> load({DateTime? date}) async {
+  Future<void> load({DateTime? date, bool allTime = false}) async {
     emit(const DashboardLoading());
     try {
-      emit(DashboardLoaded(await getDashboardStats(date: date)));
+      emit(
+        DashboardLoaded(
+          await getDashboardStats(
+            date: allTime ? null : (date ?? DateTime.now()),
+          ),
+        ),
+      );
     } catch (error) {
       emit(DashboardError(error.toString()));
     }

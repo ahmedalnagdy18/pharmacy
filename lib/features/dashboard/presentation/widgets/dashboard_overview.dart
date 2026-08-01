@@ -4,6 +4,7 @@ import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_cubit.
 import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_state.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
 import 'package:pharmacy/widgets/app_stat_card.dart';
+import 'package:pharmacy/widgets/date_filter_bar.dart';
 
 class DashboardOverview extends StatefulWidget {
   const DashboardOverview({super.key});
@@ -12,20 +13,8 @@ class DashboardOverview extends StatefulWidget {
 }
 
 class _DashboardOverviewState extends State<DashboardOverview> {
-  DateTime _selectedDate = DateTime.now();
-
-  Future<void> _pickDate() async {
-    final selected = await showDatePicker(
-      context: context,
-      firstDate: DateTime(2020),
-      lastDate: DateTime.now(),
-      initialDate: _selectedDate,
-    );
-    if (selected != null && mounted) {
-      setState(() => _selectedDate = selected);
-      context.read<DashboardCubit>().load(date: selected);
-    }
-  }
+  DateFilter _dateFilter = DateFilter.today;
+  DateTime? _customDate;
 
   @override
   Widget build(BuildContext context) {
@@ -43,50 +32,21 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Spacer(),
-                  SegmentedButton<int>(
-                    segments: const [
-                      ButtonSegment(value: 0, label: Text('Today')),
-                      ButtonSegment(value: 1, label: Text('Yesterday')),
-                      ButtonSegment(value: 2, label: Text('Date')),
-                    ],
-                    selected: {
-                      _selectedDate.day == DateTime.now().day &&
-                              _selectedDate.month == DateTime.now().month &&
-                              _selectedDate.year == DateTime.now().year
-                          ? 0
-                          : _selectedDate.day ==
-                                    DateTime.now()
-                                        .subtract(const Duration(days: 1))
-                                        .day &&
-                                _selectedDate.month ==
-                                    DateTime.now()
-                                        .subtract(const Duration(days: 1))
-                                        .month &&
-                                _selectedDate.year ==
-                                    DateTime.now()
-                                        .subtract(const Duration(days: 1))
-                                        .year
-                          ? 1
-                          : 2,
-                    },
-                    onSelectionChanged: (value) {
-                      if (value.first == 2) {
-                        _pickDate();
-                      } else {
-                        final date = DateTime.now().subtract(
-                          Duration(days: value.first),
-                        );
-                        setState(() => _selectedDate = date);
-                        context.read<DashboardCubit>().load(date: date);
-                      }
+                  DateFilterBar(
+                    value: _dateFilter,
+                    customDate: _customDate,
+                    onChanged: (selection) {
+                      setState(() {
+                        _dateFilter = selection.filter;
+                        _customDate = selection.customDate;
+                      });
+                      _loadStats();
                     },
                   ),
                   const SizedBox(width: 12),
                   IconButton.filledTonal(
                     tooltip: 'Refresh',
-                    onPressed: () => context.read<DashboardCubit>().load(
-                      date: _selectedDate,
-                    ),
+                    onPressed: _loadStats,
                     icon: const Icon(Icons.refresh),
                   ),
                 ],
@@ -259,6 +219,19 @@ class _DashboardOverviewState extends State<DashboardOverview> {
           ),
         );
       },
+    );
+  }
+
+  void _loadStats() {
+    final date = switch (_dateFilter) {
+      DateFilter.today => DateTime.now(),
+      DateFilter.yesterday => DateTime.now().subtract(const Duration(days: 1)),
+      DateFilter.custom => _customDate ?? DateTime.now(),
+      DateFilter.allTime => null,
+    };
+    context.read<DashboardCubit>().load(
+      date: date,
+      allTime: _dateFilter == DateFilter.allTime,
     );
   }
 }

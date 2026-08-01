@@ -19,6 +19,7 @@ import 'package:pharmacy/features/customers/data/model/customer_model.dart';
 import 'package:pharmacy/features/customers/data/model/customer_debt_model.dart';
 import 'package:pharmacy/features/customers/presentation/cubits/customers_cubit.dart';
 import 'package:pharmacy/features/customers/presentation/cubits/customers_state.dart';
+import 'package:pharmacy/widgets/date_filter_bar.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({super.key});
@@ -30,6 +31,8 @@ class SalesPage extends StatefulWidget {
 class _SalesPageState extends State<SalesPage> {
   final _searchController = TextEditingController();
   String? _saleTypeFilter;
+  DateFilter _dateFilter = DateFilter.allTime;
+  DateTime? _customDate;
 
   @override
   void dispose() {
@@ -71,7 +74,32 @@ class _SalesPageState extends State<SalesPage> {
                       for (final representative in representatives)
                         representative.id: representative,
                     };
-                    final displaySales = _groupSales(sales, productById);
+                    final query = _searchController.text.trim().toLowerCase();
+                    final filteredSales = sales
+                        .where(
+                          (sale) =>
+                              (_saleTypeFilter == null ||
+                                  sale.saleType == _saleTypeFilter) &&
+                              matchesDateFilter(
+                                sale.date,
+                                _dateFilter,
+                                _customDate,
+                              ) &&
+                              (query.isEmpty ||
+                                  (productById[sale.productId]?.name
+                                          .toLowerCase()
+                                          .contains(query) ??
+                                      false) ||
+                                  (productById[sale.productId]?.barcode
+                                          .toLowerCase()
+                                          .contains(query) ??
+                                      false)),
+                        )
+                        .toList();
+                    final displaySales = _groupSales(
+                      filteredSales,
+                      productById,
+                    );
 
                     return Padding(
                       padding: const EdgeInsets.all(24),
@@ -124,7 +152,7 @@ class _SalesPageState extends State<SalesPage> {
                                     prefixIcon: Icon(Icons.search),
                                     labelText: 'Search by medicine or barcode',
                                   ),
-                                  onChanged: (_) => _applyFilter(),
+                                  onChanged: (_) => setState(() {}),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -146,10 +174,18 @@ class _SalesPageState extends State<SalesPage> {
                                 selected: {_saleTypeFilter},
                                 onSelectionChanged: (value) {
                                   setState(() => _saleTypeFilter = value.first);
-                                  _applyFilter();
                                 },
                               ),
                             ],
+                          ),
+                          const SizedBox(height: 12),
+                          DateFilterBar(
+                            value: _dateFilter,
+                            customDate: _customDate,
+                            onChanged: (selection) => setState(() {
+                              _dateFilter = selection.filter;
+                              _customDate = selection.customDate;
+                            }),
                           ),
                           const SizedBox(height: 12),
                           if (salesState is SalesLoading)
@@ -373,10 +409,7 @@ class _SalesPageState extends State<SalesPage> {
       final items = entry.value;
       final first = items.first;
       final total = items.fold<double>(0, (sum, item) => sum + item.total);
-      final paid = items.fold<double>(
-        0,
-        (sum, item) => sum + (item.amountPaid ?? item.total),
-      );
+      final paid = first.amountPaid ?? total;
       final names = items
           .map(
             (item) =>
@@ -396,13 +429,6 @@ class _SalesPageState extends State<SalesPage> {
         amountPaid: paid,
       );
     }).toList();
-  }
-
-  void _applyFilter() {
-    context.read<SalesCubit>().searchAndFilter(
-      query: _searchController.text,
-      saleType: _saleTypeFilter,
-    );
   }
 
   Future<void> _confirmCancelInvoice(

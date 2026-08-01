@@ -7,15 +7,61 @@ import 'package:pharmacy/features/suppliers/presentation/cubits/suppliers_cubit.
 import 'package:pharmacy/features/suppliers/presentation/cubits/suppliers_state.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
 import 'package:pharmacy/features/purchases/presentation/cubits/purchases_cubit.dart';
+import 'package:pharmacy/widgets/date_filter_bar.dart';
 
-class SuppliersPage extends StatelessWidget {
+class SuppliersPage extends StatefulWidget {
   const SuppliersPage({super.key});
+
+  @override
+  State<SuppliersPage> createState() => _SuppliersPageState();
+}
+
+class _SuppliersPageState extends State<SuppliersPage> {
+  DateFilter _dateFilter = DateFilter.allTime;
+  DateTime? _customDate;
+  bool _showDebtorsOnly = false;
+
   @override
   Widget build(
     BuildContext context,
   ) => BlocBuilder<SuppliersCubit, SuppliersState>(
     builder: (context, state) {
       final data = state is SuppliersLoaded ? state : null;
+      final suppliers = (data?.suppliers ?? const <SupplierModel>[]).where((
+        supplier,
+      ) {
+        final debts =
+            data?.debts
+                .where((debt) => debt.supplierId == supplier.id)
+                .toList() ??
+            [];
+        final payments =
+            data?.payments
+                .where((payment) => payment.supplierId == supplier.id)
+                .toList() ??
+            [];
+        final hasDebt = debts.any(
+          (debt) =>
+              debt.status == DebtStatus.pending && debt.remainingAmount > 0,
+        );
+        final hasActivity =
+            _dateFilter == DateFilter.allTime ||
+            debts.any(
+              (debt) => matchesDateFilter(
+                debt.date,
+                _dateFilter,
+                _customDate,
+              ),
+            ) ||
+            payments.any(
+              (payment) => matchesDateFilter(
+                payment.date,
+                _dateFilter,
+                _customDate,
+              ),
+            );
+        return (!_showDebtorsOnly || hasDebt) && hasActivity;
+      }).toList();
       return Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -41,6 +87,28 @@ class SuppliersPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: DateFilterBar(
+                    value: _dateFilter,
+                    customDate: _customDate,
+                    onChanged: (selection) => setState(() {
+                      _dateFilter = selection.filter;
+                      _customDate = selection.customDate;
+                    }),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                FilterChip(
+                  label: const Text('Has outstanding debt'),
+                  selected: _showDebtorsOnly,
+                  onSelected: (selected) =>
+                      setState(() => _showDebtorsOnly = selected),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
             if (state is SuppliersLoading) const LinearProgressIndicator(),
             const SizedBox(height: 12),
             Expanded(
@@ -56,9 +124,7 @@ class SuppliersPage extends StatelessWidget {
                       DataColumn(label: Text('Outstanding')),
                       DataColumn(label: Text('Actions')),
                     ],
-                    rows: (data?.suppliers ?? const <SupplierModel>[]).map((
-                      supplier,
-                    ) {
+                    rows: suppliers.map((supplier) {
                       final debts = data!.debts
                           .where(
                             (d) =>
@@ -82,6 +148,11 @@ class SuppliersPage extends StatelessWidget {
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
+                                IconButton(
+                                  tooltip: 'View details',
+                                  onPressed: () => _details(context, supplier),
+                                  icon: const Icon(Icons.visibility_outlined),
+                                ),
                                 IconButton(
                                   tooltip: 'Record payment',
                                   onPressed: debts.isEmpty
@@ -265,5 +336,64 @@ class SuppliersPage extends StatelessWidget {
       );
       if (context.mounted) await context.read<PurchasesCubit>().load();
     }
+  }
+
+  void _details(BuildContext context, SupplierModel supplier) {
+    final state = context.read<SuppliersCubit>().state;
+    if (state is! SuppliersLoaded) return;
+    final debts = state.debts.where((debt) => debt.supplierId == supplier.id);
+    final payments = state.payments.where(
+      (payment) => payment.supplierId == supplier.id,
+    );
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(supplier.name),
+        content: SizedBox(
+          width: 560,
+          height: 400,
+          child: ListView(
+            children: [
+              Text(
+                '${supplier.company}${supplier.phone.isEmpty ? '' : ' • ${supplier.phone}'}',
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Outstanding debts',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              ...debts.map(
+                (debt) => ListTile(
+                  title: Text('Purchase #${debt.purchaseId.substring(0, 8)}'),
+                  subtitle: Text(
+                    '${debt.status} • ${AppFormatters.dateTime.format(debt.date)}',
+                  ),
+                  trailing: Text(
+                    AppFormatters.currency.format(debt.remainingAmount),
+                  ),
+                ),
+              ),
+              const Divider(),
+              Text(
+                'Payment history',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              ...payments.map(
+                (payment) => ListTile(
+                  title: Text(AppFormatters.currency.format(payment.amount)),
+                  subtitle: Text(AppFormatters.dateTime.format(payment.date)),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
   }
 }

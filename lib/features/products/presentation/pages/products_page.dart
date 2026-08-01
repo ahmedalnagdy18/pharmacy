@@ -4,7 +4,9 @@ import 'package:pharmacy/features/products/data/model/medicine_model.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_cubit.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_state.dart';
 import 'package:pharmacy/features/products/presentation/widgets/product_dialog.dart';
+import 'package:pharmacy/features/products/presentation/services/products_pdf_service.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
+import 'package:pharmacy/widgets/date_filter_bar.dart';
 
 class ProductsPage extends StatefulWidget {
   const ProductsPage({super.key});
@@ -15,6 +17,8 @@ class ProductsPage extends StatefulWidget {
 
 class _ProductsPageState extends State<ProductsPage> {
   final _searchController = TextEditingController();
+  DateFilter _dateFilter = DateFilter.allTime;
+  DateTime? _customDate;
 
   @override
   void dispose() {
@@ -38,6 +42,13 @@ class _ProductsPageState extends State<ProductsPage> {
                   product.barcode.toLowerCase().contains(query) ||
                   product.category.toLowerCase().contains(query),
             )
+            .where(
+              (product) => matchesDateFilter(
+                product.createdAt,
+                _dateFilter,
+                _customDate,
+              ),
+            )
             .toList();
         return Padding(
           padding: const EdgeInsets.all(24),
@@ -57,6 +68,14 @@ class _ProductsPageState extends State<ProductsPage> {
                     icon: const Icon(Icons.refresh),
                   ),
                   const SizedBox(width: 8),
+                  OutlinedButton.icon(
+                    onPressed: products.isEmpty
+                        ? null
+                        : () => ProductsPdfService.share(products),
+                    icon: const Icon(Icons.picture_as_pdf_outlined),
+                    label: const Text('Export PDF'),
+                  ),
+                  const SizedBox(width: 8),
                   FilledButton.icon(
                     onPressed: () => _openDialog(context),
                     icon: const Icon(Icons.add),
@@ -72,6 +91,15 @@ class _ProductsPageState extends State<ProductsPage> {
                   prefixIcon: Icon(Icons.search),
                   labelText: 'Search by medicine, barcode, or category',
                 ),
+              ),
+              const SizedBox(height: 12),
+              DateFilterBar(
+                value: _dateFilter,
+                customDate: _customDate,
+                onChanged: (selection) => setState(() {
+                  _dateFilter = selection.filter;
+                  _customDate = selection.customDate;
+                }),
               ),
               const SizedBox(height: 12),
               if (state is ProductsLoading)

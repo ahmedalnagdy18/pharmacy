@@ -10,9 +10,19 @@ import 'package:pharmacy/features/suppliers/data/model/supplier_model.dart';
 import 'package:pharmacy/features/suppliers/presentation/cubits/suppliers_cubit.dart';
 import 'package:pharmacy/features/suppliers/presentation/cubits/suppliers_state.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
+import 'package:pharmacy/widgets/date_filter_bar.dart';
 
-class PurchasesPage extends StatelessWidget {
+class PurchasesPage extends StatefulWidget {
   const PurchasesPage({super.key});
+
+  @override
+  State<PurchasesPage> createState() => _PurchasesPageState();
+}
+
+class _PurchasesPageState extends State<PurchasesPage> {
+  DateFilter _dateFilter = DateFilter.allTime;
+  DateTime? _customDate;
+
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<PurchasesCubit, PurchasesState>(
@@ -30,6 +40,15 @@ class PurchasesPage extends StatelessWidget {
                     final purchases = purchaseState is PurchasesLoaded
                         ? purchaseState.purchases
                         : const <PurchaseModel>[];
+                    final filteredPurchases = purchases
+                        .where(
+                          (purchase) => matchesDateFilter(
+                            purchase.date,
+                            _dateFilter,
+                            _customDate,
+                          ),
+                        )
+                        .toList();
                     final productById = {for (final p in products) p.id: p};
                     final supplierById = {for (final s in suppliers) s.id: s};
                     return Padding(
@@ -46,6 +65,13 @@ class PurchasesPage extends StatelessWidget {
                                 ).textTheme.headlineSmall,
                               ),
                               const Spacer(),
+                              IconButton.filledTonal(
+                                tooltip: 'Refresh',
+                                onPressed: () =>
+                                    context.read<PurchasesCubit>().load(),
+                                icon: const Icon(Icons.refresh),
+                              ),
+                              const SizedBox(width: 8),
                               FilledButton.icon(
                                 onPressed: products.isEmpty || suppliers.isEmpty
                                     ? null
@@ -59,6 +85,15 @@ class PurchasesPage extends StatelessWidget {
                             ],
                           ),
                           const SizedBox(height: 16),
+                          DateFilterBar(
+                            value: _dateFilter,
+                            customDate: _customDate,
+                            onChanged: (selection) => setState(() {
+                              _dateFilter = selection.filter;
+                              _customDate = selection.customDate;
+                            }),
+                          ),
+                          const SizedBox(height: 12),
                           Expanded(
                             child: Card(
                               elevation: 0,
@@ -75,7 +110,7 @@ class PurchasesPage extends StatelessWidget {
                                     DataColumn(label: Text('Remaining')),
                                   ],
                                   rows: _purchaseRows(
-                                    purchases,
+                                    filteredPurchases,
                                     productById,
                                     supplierById,
                                   ),
