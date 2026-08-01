@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/features/products/data/model/medicine_model.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_cubit.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_state.dart';
@@ -52,12 +53,12 @@ class RepresentativeInventoryPage extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            'Representative inventory',
+                            context.tr('Representative inventory'),
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const Spacer(),
                           IconButton.filledTonal(
-                            tooltip: 'Refresh',
+                            tooltip: context.tr('Refresh'),
                             onPressed: () {
                               context
                                   .read<RepresentativeInventoryCubit>()
@@ -77,7 +78,7 @@ class RepresentativeInventoryPage extends StatelessWidget {
                                     representatives: representatives,
                                   ),
                             icon: const Icon(Icons.inventory_2_outlined),
-                            label: const Text('Assign'),
+                            label: Text(context.tr('Assign')),
                           ),
                         ],
                       ),
@@ -94,19 +95,19 @@ class RepresentativeInventoryPage extends StatelessWidget {
                             child: SingleChildScrollView(
                               scrollDirection: Axis.horizontal,
                               child: DataTable(
-                                columns: const [
-                                  DataColumn(label: Text('Representative')),
-                                  DataColumn(label: Text('Medicine')),
+                                columns: [
+                                  DataColumn(label: Text(context.tr('Representative'))),
+                                  DataColumn(label: Text(context.tr('Medicine'))),
                                   DataColumn(
-                                    label: Text('Assigned'),
+                                    label: Text(context.tr('Assigned')),
                                     numeric: true,
                                   ),
                                   DataColumn(
-                                    label: Text('Sold'),
+                                    label: Text(context.tr('Sold')),
                                     numeric: true,
                                   ),
                                   DataColumn(
-                                    label: Text('Remaining'),
+                                    label: Text(context.tr('Remaining')),
                                     numeric: true,
                                   ),
                                 ],

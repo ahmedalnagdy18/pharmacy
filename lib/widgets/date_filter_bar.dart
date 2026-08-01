@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 
 enum DateFilter { allTime, today, yesterday, custom }
 
@@ -23,14 +24,23 @@ class DateFilterBar extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         SegmentedButton<DateFilter>(
-          segments: const [
-            ButtonSegment(value: DateFilter.allTime, label: Text('All time')),
-            ButtonSegment(value: DateFilter.today, label: Text('Today')),
+          segments: [
+            ButtonSegment(
+              value: DateFilter.allTime,
+              label: Text(context.tr('All time')),
+            ),
+            ButtonSegment(
+              value: DateFilter.today,
+              label: Text(context.tr('Today')),
+            ),
             ButtonSegment(
               value: DateFilter.yesterday,
-              label: Text('Yesterday'),
+              label: Text(context.tr('Yesterday')),
             ),
-            ButtonSegment(value: DateFilter.custom, label: Text('Date')),
+            ButtonSegment(
+              value: DateFilter.custom,
+              label: Text(context.tr('Date')),
+            ),
           ],
           selected: {value},
           onSelectionChanged: (selection) async {

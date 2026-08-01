@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/features/customers/data/model/customer_debt_model.dart';
 import 'package:pharmacy/features/customers/data/model/customer_model.dart';
 import 'package:pharmacy/features/customers/presentation/cubits/customers_cubit.dart';
@@ -81,7 +82,7 @@ class _CustomersPageState extends State<CustomersPage> {
             Row(
               children: [
                 Text(
-                  'Customers',
+                  context.tr('Customers'),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const Spacer(),
@@ -93,7 +94,7 @@ class _CustomersPageState extends State<CustomersPage> {
                 FilledButton.icon(
                   onPressed: () => _customerDialog(context),
                   icon: const Icon(Icons.person_add_alt_1),
-                  label: const Text('Add customer'),
+                  label: Text(context.tr('Add customer')),
                 ),
               ],
             ),
@@ -137,13 +138,19 @@ class _CustomersPageState extends State<CustomersPage> {
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Customer')),
-                      DataColumn(label: Text('Phone')),
-                      DataColumn(label: Text('Current debt'), numeric: true),
-                      DataColumn(label: Text('Unpaid invoices'), numeric: true),
-                      DataColumn(label: Text('Last payment')),
-                      DataColumn(label: Text('Actions')),
+                    columns: [
+                      DataColumn(label: Text(context.tr('Customers'))),
+                      DataColumn(label: Text(context.tr('Phone'))),
+                      DataColumn(
+                        label: Text(context.tr('Current debt')),
+                        numeric: true,
+                      ),
+                      DataColumn(
+                        label: Text(context.tr('Unpaid invoices')),
+                        numeric: true,
+                      ),
+                      DataColumn(label: Text(context.tr('Last payment'))),
+                      DataColumn(label: Text(context.tr('Actions'))),
                     ],
                     rows: customers.map((customer) {
                       final debts =

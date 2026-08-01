@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/features/customers/data/model/customer_debt_model.dart';
 import 'package:pharmacy/features/suppliers/data/model/supplier_debt_model.dart';
 import 'package:pharmacy/features/suppliers/data/model/supplier_model.dart';
@@ -70,7 +71,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
             Row(
               children: [
                 Text(
-                  'Suppliers',
+                  context.tr('Suppliers'),
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const Spacer(),
@@ -82,7 +83,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
                 FilledButton.icon(
                   onPressed: () => _dialog(context),
                   icon: const Icon(Icons.add_business_outlined),
-                  label: const Text('Add supplier'),
+                  label: Text(context.tr('Add supplier')),
                 ),
               ],
             ),
@@ -117,12 +118,12 @@ class _SuppliersPageState extends State<SuppliersPage> {
                 child: SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: DataTable(
-                    columns: const [
-                      DataColumn(label: Text('Supplier')),
+                    columns: [
+                      DataColumn(label: Text(context.tr('Suppliers'))),
                       DataColumn(label: Text('Company')),
-                      DataColumn(label: Text('Phone')),
-                      DataColumn(label: Text('Outstanding')),
-                      DataColumn(label: Text('Actions')),
+                      DataColumn(label: Text(context.tr('Phone'))),
+                      DataColumn(label: Text(context.tr('Outstanding'))),
+                      DataColumn(label: Text(context.tr('Actions'))),
                     ],
                     rows: suppliers.map((supplier) {
                       final debts = data!.debts

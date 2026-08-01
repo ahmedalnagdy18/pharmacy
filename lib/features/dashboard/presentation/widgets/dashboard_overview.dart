@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_cubit.dart';
 import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_state.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
@@ -28,7 +29,7 @@ class _DashboardOverviewState extends State<DashboardOverview> {
               Row(
                 children: [
                   Text(
-                    'Dashboard',
+                    context.tr('Dashboard'),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Spacer(),
@@ -45,7 +46,7 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                   ),
                   const SizedBox(width: 12),
                   IconButton.filledTonal(
-                    tooltip: 'Refresh',
+                    tooltip: context.tr('Refresh'),
                     onPressed: _loadStats,
                     icon: const Icon(Icons.refresh),
                   ),
@@ -79,66 +80,66 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                               childAspectRatio: crossAxisCount == 1 ? 4 : 2.6,
                               children: [
                                 AppStatCard(
-                                  title: 'Products',
+                                  title: context.tr('Products'),
                                   value: state.stats.totalProducts.toString(),
                                   icon: Icons.medication_outlined,
                                 ),
                                 AppStatCard(
-                                  title: 'Warehouse quantity',
+                                  title: context.tr('Warehouse quantity'),
                                   value: state.stats.totalWarehouseQuantity
                                       .toString(),
                                   icon: Icons.inventory_2_outlined,
                                 ),
                                 AppStatCard(
-                                  title: 'Inventory value',
+                                  title: context.tr('Inventory value'),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.inventoryValue,
                                   ),
                                   icon: Icons.account_balance_wallet_outlined,
                                 ),
                                 AppStatCard(
-                                  title: 'Today sales',
+                                  title: context.tr('Today sales'),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.todaySales,
                                   ),
                                   icon: Icons.today_outlined,
                                 ),
                                 AppStatCard(
-                                  title: 'Monthly sales',
+                                  title: context.tr('Monthly sales'),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.monthlySales,
                                   ),
                                   icon: Icons.calendar_month_outlined,
                                 ),
                                 AppStatCard(
-                                  title: 'Low stock',
+                                  title: context.tr('Low stock'),
                                   value: state.stats.lowStockProducts.length
                                       .toString(),
                                   icon: Icons.warning_amber_outlined,
                                 ),
                                 AppStatCard(
-                                  title: 'Customer debts',
+                                  title: context.tr('Customer debts'),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.outstandingCustomerDebts,
                                   ),
                                   icon: Icons.account_balance_wallet_outlined,
                                 ),
                                 AppStatCard(
-                                  title: 'Supplier debts',
+                                  title: context.tr('Supplier debts'),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.outstandingSupplierDebts,
                                   ),
                                   icon: Icons.receipt_long_outlined,
                                 ),
                                 AppStatCard(
-                                  title: "Today's collections",
+                                  title: context.tr("Today's collections"),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.todayCollections,
                                   ),
                                   icon: Icons.payments_outlined,
                                 ),
                                 AppStatCard(
-                                  title: "Today's payments",
+                                  title: context.tr("Today's payments"),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.todayPayments,
                                   ),
@@ -154,8 +155,12 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                           children: [
                             Expanded(
                               child: _SummaryTable(
-                                title: 'Top medicines',
-                                columns: const ['Medicine', 'Qty', 'Total'],
+                                title: context.tr('Top medicines'),
+                                columns: [
+                                  context.tr('Medicine'),
+                                  context.tr('Qty'),
+                                  context.tr('Total'),
+                                ],
                                 rows: state.stats.topSellingMedicines
                                     .map(
                                       (item) => [
@@ -172,11 +177,11 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: _SummaryTable(
-                                title: 'Top representatives',
-                                columns: const [
-                                  'Representative',
-                                  'Qty',
-                                  'Total',
+                                title: context.tr('Top representatives'),
+                                columns: [
+                                  context.tr('Representative'),
+                                  context.tr('Qty'),
+                                  context.tr('Total'),
                                 ],
                                 rows: state.stats.topRepresentatives
                                     .map(
@@ -195,8 +200,12 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                         ),
                         const SizedBox(height: 16),
                         _SummaryTable(
-                          title: 'Low stock products',
-                          columns: const ['Medicine', 'Category', 'Qty'],
+                          title: context.tr('Low stock products'),
+                          columns: [
+                            context.tr('Medicine'),
+                            context.tr('Category'),
+                            context.tr('Qty'),
+                          ],
                           rows: state.stats.lowStockProducts
                               .map(
                                 (item) => [

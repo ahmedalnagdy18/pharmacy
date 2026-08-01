@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_cubit.dart';
 import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_state.dart';
 import 'package:pharmacy/widgets/app_formatters.dart';
@@ -29,7 +30,7 @@ class _ReportsPageState extends State<ReportsPage> {
               Row(
                 children: [
                   Text(
-                    'Reports',
+                    context.tr('Reports'),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Spacer(),
@@ -46,7 +47,7 @@ class _ReportsPageState extends State<ReportsPage> {
                   ),
                   const SizedBox(width: 12),
                   IconButton.filledTonal(
-                    tooltip: 'Refresh',
+                    tooltip: context.tr('Refresh'),
                     onPressed: _loadStats,
                     icon: const Icon(Icons.refresh),
                   ),
@@ -62,7 +63,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           children: [
                             Expanded(
                               child: AppStatCard(
-                                title: 'Daily sales',
+                                title: context.tr('Daily sales'),
                                 value: AppFormatters.currency.format(
                                   state.stats.todaySales,
                                 ),
@@ -72,7 +73,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: AppStatCard(
-                                title: 'Monthly sales',
+                                title: context.tr('Monthly sales'),
                                 value: AppFormatters.currency.format(
                                   state.stats.monthlySales,
                                 ),
@@ -82,7 +83,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: AppStatCard(
-                                title: 'Inventory value',
+                                title: context.tr('Inventory value'),
                                 value: AppFormatters.currency.format(
                                   state.stats.inventoryValue,
                                 ),
@@ -96,7 +97,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           children: [
                             Expanded(
                               child: AppStatCard(
-                                title: 'Customer debt report',
+                                title: context.tr('Customer debt report'),
                                 value: AppFormatters.currency.format(
                                   state.stats.outstandingCustomerDebts,
                                 ),
@@ -106,7 +107,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: AppStatCard(
-                                title: 'Supplier debt report',
+                                title: context.tr('Supplier debt report'),
                                 value: AppFormatters.currency.format(
                                   state.stats.outstandingSupplierDebts,
                                 ),
@@ -116,7 +117,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: AppStatCard(
-                                title: 'Collections today',
+                                title: context.tr('Collections today'),
                                 value: AppFormatters.currency.format(
                                   state.stats.todayCollections,
                                 ),
@@ -127,8 +128,12 @@ class _ReportsPageState extends State<ReportsPage> {
                         ),
                         const SizedBox(height: 16),
                         _ReportTable(
-                          title: 'Top medicines',
-                          columns: const ['Medicine', 'Sold', 'Sales'],
+                          title: context.tr('Top medicines'),
+                          columns: [
+                            context.tr('Medicine'),
+                            context.tr('Sold'),
+                            context.tr('Sales'),
+                          ],
                           rows: state.stats.topSellingMedicines
                               .map(
                                 (item) => [
@@ -143,8 +148,12 @@ class _ReportsPageState extends State<ReportsPage> {
                         ),
                         const SizedBox(height: 16),
                         _ReportTable(
-                          title: 'Top representatives',
-                          columns: const ['Representative', 'Sold', 'Sales'],
+                          title: context.tr('Top representatives'),
+                          columns: [
+                            context.tr('Representative'),
+                            context.tr('Sold'),
+                            context.tr('Sales'),
+                          ],
                           rows: state.stats.topRepresentatives
                               .map(
                                 (item) => [

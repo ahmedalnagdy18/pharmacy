@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/features/products/data/model/medicine_model.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_cubit.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_state.dart';
@@ -59,7 +60,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                           Row(
                             children: [
                               Text(
-                                'Purchases',
+                                context.tr('Purchases'),
                                 style: Theme.of(
                                   context,
                                 ).textTheme.headlineSmall,
@@ -80,7 +81,7 @@ class _PurchasesPageState extends State<PurchasesPage> {
                                 icon: const Icon(
                                   Icons.add_shopping_cart_outlined,
                                 ),
-                                label: const Text('New purchase'),
+                                label: Text(context.tr('New purchase')),
                               ),
                             ],
                           ),
@@ -100,14 +101,22 @@ class _PurchasesPageState extends State<PurchasesPage> {
                               child: SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: DataTable(
-                                  columns: const [
-                                    DataColumn(label: Text('Date')),
-                                    DataColumn(label: Text('Supplier')),
-                                    DataColumn(label: Text('Medicine')),
-                                    DataColumn(label: Text('Qty')),
-                                    DataColumn(label: Text('Total')),
-                                    DataColumn(label: Text('Paid')),
-                                    DataColumn(label: Text('Remaining')),
+                                  columns: [
+                                    DataColumn(label: Text(context.tr('Date'))),
+                                    DataColumn(
+                                      label: Text(context.tr('Suppliers')),
+                                    ),
+                                    DataColumn(
+                                      label: Text(context.tr('Medicine')),
+                                    ),
+                                    DataColumn(label: Text(context.tr('Qty'))),
+                                    DataColumn(
+                                      label: Text(context.tr('Total')),
+                                    ),
+                                    DataColumn(label: Text(context.tr('Paid'))),
+                                    DataColumn(
+                                      label: Text(context.tr('Remaining')),
+                                    ),
                                   ],
                                   rows: _purchaseRows(
                                     filteredPurchases,

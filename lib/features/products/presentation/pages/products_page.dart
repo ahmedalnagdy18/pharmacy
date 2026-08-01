@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/features/products/data/model/medicine_model.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_cubit.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_state.dart';
@@ -58,12 +59,12 @@ class _ProductsPageState extends State<ProductsPage> {
               Row(
                 children: [
                   Text(
-                    'Products',
+                    context.tr('Products'),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Spacer(),
                   IconButton.filledTonal(
-                    tooltip: 'Refresh',
+                    tooltip: context.tr('Refresh'),
                     onPressed: () => context.read<ProductsCubit>().load(),
                     icon: const Icon(Icons.refresh),
                   ),
@@ -79,7 +80,7 @@ class _ProductsPageState extends State<ProductsPage> {
                   FilledButton.icon(
                     onPressed: () => _openDialog(context),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add medicine'),
+                    label: Text(context.tr('Add medicine')),
                   ),
                 ],
               ),
@@ -114,15 +115,24 @@ class _ProductsPageState extends State<ProductsPage> {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
-                        columns: const [
-                          DataColumn(label: Text('Name')),
-                          DataColumn(label: Text('Category')),
-                          DataColumn(label: Text('Barcode')),
-                          DataColumn(label: Text('Qty'), numeric: true),
-                          DataColumn(label: Text('Purchase'), numeric: true),
-                          DataColumn(label: Text('Selling'), numeric: true),
-                          DataColumn(label: Text('Created')),
-                          DataColumn(label: Text('Actions')),
+                        columns: [
+                          DataColumn(label: Text(context.tr('Name'))),
+                          DataColumn(label: Text(context.tr('Category'))),
+                          DataColumn(label: Text(context.tr('Barcode'))),
+                          DataColumn(
+                            label: Text(context.tr('Qty')),
+                            numeric: true,
+                          ),
+                          DataColumn(
+                            label: Text(context.tr('Purchase')),
+                            numeric: true,
+                          ),
+                          DataColumn(
+                            label: Text(context.tr('Selling')),
+                            numeric: true,
+                          ),
+                          DataColumn(label: Text(context.tr('Created'))),
+                          DataColumn(label: Text(context.tr('Actions'))),
                         ],
                         rows: products
                             .map((product) => _row(context, product))

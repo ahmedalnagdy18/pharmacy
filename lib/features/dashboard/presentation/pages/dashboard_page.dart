@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/core/presentation/cubits/app_data_cubit.dart';
 import 'package:pharmacy/core/presentation/cubits/app_data_state.dart';
 import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_cubit.dart';
@@ -99,92 +100,123 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ],
       child: Scaffold(
-        body: Row(
-          children: [
-            NavigationRail(
-              selectedIndex: _selectedIndex,
-              onDestinationSelected: _selectPage,
-              labelType: NavigationRailLabelType.all,
-              trailing: Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: BlocBuilder<AppDataCubit, AppDataState>(
-                      builder: (context, state) {
-                        return IconButton.filledTonal(
-                          tooltip: 'Clear all data',
-                          onPressed: state is AppDataLoading
-                              ? null
-                              : () => _confirmClearAllData(context),
-                          icon: state is AppDataLoading
-                              ? const SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            final compactNavigation = constraints.maxWidth < 1000;
+            return Row(
+              children: [
+                NavigationRail(
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: _selectPage,
+                  labelType: compactNavigation
+                      ? NavigationRailLabelType.none
+                      : NavigationRailLabelType.all,
+                  destinations: _destinations(context),
+                ),
+                const VerticalDivider(width: 1),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      Positioned.fill(child: _pages[_selectedIndex]),
+                      PositionedDirectional(
+                        bottom: 12,
+                        end: 12,
+                        child: Column(
+                          children: [
+                            IconButton.filledTonal(
+                              tooltip: context.localized(
+                                'Switch language',
+                                'تغيير اللغة',
+                              ),
+                              onPressed: () =>
+                                  AppLanguageScope.of(context).toggle(),
+                              icon: Text(context.isArabic ? 'EN' : 'ع'),
+                            ),
+                            const SizedBox(height: 8),
+                            BlocBuilder<AppDataCubit, AppDataState>(
+                              builder: (context, state) =>
+                                  IconButton.filledTonal(
+                                    tooltip: context.localized(
+                                      'Clear all data',
+                                      'مسح كل البيانات',
+                                    ),
+                                    onPressed: state is AppDataLoading
+                                        ? null
+                                        : () => _confirmClearAllData(context),
+                                    icon: state is AppDataLoading
+                                        ? const SizedBox.square(
+                                            dimension: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(
+                                            Icons.delete_sweep_outlined,
+                                          ),
                                   ),
-                                )
-                              : const Icon(Icons.delete_sweep_outlined),
-                        );
-                      },
-                    ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.dashboard_outlined),
-                  selectedIcon: Icon(Icons.dashboard),
-                  label: Text('Dashboard'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.medication_outlined),
-                  selectedIcon: Icon(Icons.medication),
-                  label: Text('Products'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.badge_outlined),
-                  selectedIcon: Icon(Icons.badge),
-                  label: Text('Reps'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.inventory_2_outlined),
-                  selectedIcon: Icon(Icons.inventory_2),
-                  label: Text('Inventory'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.point_of_sale_outlined),
-                  selectedIcon: Icon(Icons.point_of_sale),
-                  label: Text('Sales'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.people_outline),
-                  selectedIcon: Icon(Icons.people),
-                  label: Text('Customers'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.local_shipping_outlined),
-                  selectedIcon: Icon(Icons.local_shipping),
-                  label: Text('Suppliers'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.shopping_cart_outlined),
-                  selectedIcon: Icon(Icons.shopping_cart),
-                  label: Text('Purchases'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.assessment_outlined),
-                  selectedIcon: Icon(Icons.assessment),
-                  label: Text('Reports'),
-                ),
               ],
-            ),
-            const VerticalDivider(width: 1),
-            Expanded(child: _pages[_selectedIndex]),
-          ],
+            );
+          },
         ),
       ),
     );
+  }
+
+  List<NavigationRailDestination> _destinations(BuildContext context) {
+    return [
+      NavigationRailDestination(
+        icon: Icon(Icons.dashboard_outlined),
+        selectedIcon: Icon(Icons.dashboard),
+        label: Text(context.localized('Dashboard', 'الرئيسية')),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.medication_outlined),
+        selectedIcon: Icon(Icons.medication),
+        label: Text(context.localized('Products', 'المنتجات')),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.badge_outlined),
+        selectedIcon: Icon(Icons.badge),
+        label: Text(context.localized('Reps', 'المندوبون')),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.inventory_2_outlined),
+        selectedIcon: Icon(Icons.inventory_2),
+        label: Text(context.localized('Inventory', 'المخزون')),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.point_of_sale_outlined),
+        selectedIcon: Icon(Icons.point_of_sale),
+        label: Text(context.localized('Sales', 'المبيعات')),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.people_outline),
+        selectedIcon: Icon(Icons.people),
+        label: Text(context.localized('Customers', 'العملاء')),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.local_shipping_outlined),
+        selectedIcon: Icon(Icons.local_shipping),
+        label: Text(context.localized('Suppliers', 'الموردون')),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.shopping_cart_outlined),
+        selectedIcon: Icon(Icons.shopping_cart),
+        label: Text(context.localized('Purchases', 'المشتريات')),
+      ),
+      NavigationRailDestination(
+        icon: Icon(Icons.assessment_outlined),
+        selectedIcon: Icon(Icons.assessment),
+        label: Text(context.localized('Reports', 'التقارير')),
+      ),
+    ];
   }
 
   void _selectPage(int index) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/features/representatives/data/model/representative_model.dart';
 import 'package:pharmacy/features/representatives/presentation/cubits/representatives_cubit.dart';
 import 'package:pharmacy/features/representatives/presentation/cubits/representatives_state.dart';
@@ -23,12 +24,12 @@ class RepresentativesPage extends StatelessWidget {
               Row(
                 children: [
                   Text(
-                    'Representatives',
+                    context.tr('Representatives'),
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Spacer(),
                   IconButton.filledTonal(
-                    tooltip: 'Refresh',
+                    tooltip: context.tr('Refresh'),
                     onPressed: () =>
                         context.read<RepresentativesCubit>().load(),
                     icon: const Icon(Icons.refresh),
@@ -37,7 +38,7 @@ class RepresentativesPage extends StatelessWidget {
                   FilledButton.icon(
                     onPressed: () => _openDialog(context),
                     icon: const Icon(Icons.add),
-                    label: const Text('Add representative'),
+                    label: Text(context.tr('Add representative')),
                   ),
                 ],
               ),
@@ -54,10 +55,10 @@ class RepresentativesPage extends StatelessWidget {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: DataTable(
-                        columns: const [
-                          DataColumn(label: Text('Name')),
-                          DataColumn(label: Text('Phone')),
-                          DataColumn(label: Text('Actions')),
+                        columns: [
+                          DataColumn(label: Text(context.tr('Name'))),
+                          DataColumn(label: Text(context.tr('Phone'))),
+                          DataColumn(label: Text(context.tr('Actions'))),
                         ],
                         rows: representatives
                             .map((item) => _row(context, item))

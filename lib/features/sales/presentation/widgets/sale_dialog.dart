@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:pharmacy/core/localization/app_language.dart';
 import 'package:pharmacy/features/customers/data/model/customer_debt_model.dart';
 import 'package:pharmacy/features/customers/data/model/customer_model.dart';
 import 'package:pharmacy/features/products/data/model/medicine_model.dart';
@@ -7,6 +8,7 @@ import 'package:pharmacy/features/representative_inventory/data/model/representa
 import 'package:pharmacy/features/representatives/data/model/representative_model.dart';
 import 'package:pharmacy/features/sales/data/model/sale_model.dart';
 import 'package:pharmacy/features/sales/presentation/cubits/sales_cubit.dart';
+import 'package:pharmacy/features/sales/presentation/widgets/product_search_field.dart';
 
 class SaleFormResult {
   const SaleFormResult({
@@ -157,9 +159,11 @@ class _SaleDialogState extends State<SaleDialog> {
       }
     }
     return AlertDialog(
-      title: const Text('Create sale'),
+      title: Text(context.localized('Create sale', 'إنشاء عملية بيع')),
       content: SizedBox(
-        width: 650,
+        width: MediaQuery.sizeOf(context).width < 720
+            ? MediaQuery.sizeOf(context).width * .9
+            : 650,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
@@ -255,9 +259,16 @@ class _SaleDialogState extends State<SaleDialog> {
                 ],
                 Row(
                   children: [
-                    const Expanded(flex: 3, child: Text('Medicine')),
-                    const Expanded(child: Text('Qty')),
-                    const Expanded(child: Text('Unit price')),
+                    Expanded(
+                      flex: 3,
+                      child: Text(context.localized('Medicine', 'المنتج')),
+                    ),
+                    Expanded(child: Text(context.localized('Qty', 'الكمية'))),
+                    Expanded(
+                      child: Text(
+                        context.localized('Unit price', 'سعر الوحدة'),
+                      ),
+                    ),
                     const SizedBox(width: 40),
                   ],
                 ),
@@ -270,27 +281,20 @@ class _SaleDialogState extends State<SaleDialog> {
                       children: [
                         Expanded(
                           flex: 3,
-                          child: DropdownButtonFormField<String>(
-                            initialValue: line.productId,
-                            items: products
-                                .map(
-                                  (p) => DropdownMenuItem(
-                                    value: p.id,
-                                    child: Text(
-                                      '${p.name} (${_availableQuantity(p.id)})',
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (value) => setState(() {
-                              line.productId = value;
-                              final p = products.firstWhere(
-                                (p) => p.id == value,
-                              );
-                              line.unitPrice.text = p.sellingPrice.toString();
+                          child: ProductSearchField(
+                            key: ValueKey('${index}_${line.productId}'),
+                            products: products,
+                            selectedProductId: line.productId,
+                            availableQuantity: _availableQuantity,
+                            label: context.localized(
+                              'Search medicine',
+                              'ابحث عن منتج',
+                            ),
+                            onSelected: (product) => setState(() {
+                              line.productId = product.id;
+                              line.unitPrice.text = product.sellingPrice
+                                  .toString();
                             }),
-                            validator: (value) =>
-                                value == null ? 'Required' : null,
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -356,12 +360,17 @@ class _SaleDialogState extends State<SaleDialog> {
                 TextButton.icon(
                   onPressed: products.isEmpty ? null : () => setState(_addLine),
                   icon: const Icon(Icons.add),
-                  label: const Text('Add medicine'),
+                  label: Text(context.localized('Add medicine', 'إضافة منتج')),
                 ),
                 if (_saleType == SaleType.direct)
                   TextFormField(
                     controller: _paid,
-                    decoration: const InputDecoration(labelText: 'Amount paid'),
+                    decoration: InputDecoration(
+                      labelText: context.localized(
+                        'Amount paid',
+                        'المبلغ المدفوع',
+                      ),
+                    ),
                     keyboardType: TextInputType.number,
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
@@ -381,14 +390,20 @@ class _SaleDialogState extends State<SaleDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.localized('Cancel', 'إلغاء')),
         ),
-        FilledButton(onPressed: _submit, child: const Text('Save sale')),
+        FilledButton(
+          onPressed: _submit,
+          child: Text(context.localized('Save sale', 'حفظ البيع')),
+        ),
       ],
     );
   }
 
   void _submit() {
+    if (_lines.any((line) => line.productId == null)) {
+      return;
+    }
     if (!_formKey.currentState!.validate()) return;
     Navigator.pop(
       context,
