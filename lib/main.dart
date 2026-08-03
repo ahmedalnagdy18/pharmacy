@@ -15,6 +15,8 @@ import 'package:pharmacy/features/sales/presentation/cubits/sales_cubit.dart';
 import 'package:pharmacy/features/customers/presentation/cubits/customers_cubit.dart';
 import 'package:pharmacy/features/suppliers/presentation/cubits/suppliers_cubit.dart';
 import 'package:pharmacy/features/purchases/presentation/cubits/purchases_cubit.dart';
+import 'package:pharmacy/features/expenses/presentation/cubits/expenses_cubit.dart';
+import 'package:pharmacy/features/representatives/presentation/cubits/representative_collections_cubit.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,6 +62,12 @@ class _MyAppState extends State<MyApp> {
             )..load(),
           ),
           BlocProvider(
+            create: (_) => ExpensesCubit(widget.dependencies.expenseUseCases)..load(),
+          ),
+          BlocProvider(
+            create: (_) => RepresentativeCollectionsCubit(widget.dependencies.representativeCollectionsDataSource)..load(),
+          ),
+          BlocProvider(
             create: (_) => RepresentativesCubit(
               getRepresentatives: widget.dependencies.getRepresentatives,
               saveRepresentative: widget.dependencies.saveRepresentative,
@@ -80,6 +88,7 @@ class _MyAppState extends State<MyApp> {
                   widget.dependencies.createRepresentativeSale,
               cancelSaleInvoice: widget.dependencies.cancelSaleInvoice,
               searchAndFilterSales: widget.dependencies.searchAndFilterSales,
+              representativeCollectionsDataSource: widget.dependencies.representativeCollectionsDataSource,
             )..load(),
           ),
           BlocProvider(

@@ -7,6 +7,9 @@ import 'package:pharmacy/features/sales/data/model/sale_model.dart';
 import 'package:pharmacy/features/customers/data/data_source/customers_local_data_source.dart';
 import 'package:pharmacy/features/customers/data/model/customer_debt_model.dart';
 import 'package:pharmacy/features/suppliers/data/data_source/suppliers_local_data_source.dart';
+import 'package:pharmacy/features/expenses/data/data_source/expenses_local_data_source.dart';
+import 'package:pharmacy/features/purchases/data/data_source/purchases_local_data_source.dart';
+import 'package:pharmacy/features/representatives/data/data_source/representative_collections_local_data_source.dart';
 
 class DashboardRepositoryImpl implements DashboardRepository {
   const DashboardRepositoryImpl({
@@ -15,6 +18,9 @@ class DashboardRepositoryImpl implements DashboardRepository {
     required this.salesDataSource,
     required this.customersDataSource,
     required this.suppliersDataSource,
+    required this.expensesDataSource,
+    required this.purchasesDataSource,
+    required this.representativeCollectionsDataSource,
   });
 
   final ProductsLocalDataSource productsDataSource;
@@ -22,6 +28,9 @@ class DashboardRepositoryImpl implements DashboardRepository {
   final SalesLocalDataSource salesDataSource;
   final CustomersLocalDataSource customersDataSource;
   final SuppliersLocalDataSource suppliersDataSource;
+  final ExpensesLocalDataSource expensesDataSource;
+  final PurchasesLocalDataSource purchasesDataSource;
+  final RepresentativeCollectionsLocalDataSource representativeCollectionsDataSource;
 
   @override
   Future<DashboardStatsModel> getStats({DateTime? date}) async {
@@ -33,6 +42,9 @@ class DashboardRepositoryImpl implements DashboardRepository {
     final supplierDebts = await suppliersDataSource.getDebts();
     final customerPayments = await customersDataSource.getPayments();
     final supplierPayments = await suppliersDataSource.getPayments();
+    final expenses = await expensesDataSource.getAll();
+    final purchases = await purchasesDataSource.getAll();
+    final representativeCollections = await representativeCollectionsDataSource.getAll();
 
     final totalWarehouseQuantity = products.fold<int>(
       0,
@@ -71,6 +83,15 @@ class DashboardRepositoryImpl implements DashboardRepository {
             .fold<double>(0, (sum, sale) => sum + sale.total);
 
     final productById = {for (final product in products) product.id: product};
+    final selectedExpenses = expenses.where((expense) => date == null || (expense.date.year == now.year && expense.date.month == now.month && expense.date.day == now.day)).toList();
+    final salesProfit = filteredSales.fold<double>(0, (sum, sale) => sum + sale.total - (sale.unitCost > 0 ? sale.unitCost : (productById[sale.productId]?.purchasePrice ?? 0)) * sale.quantity);
+    final totalExpenses = selectedExpenses.fold<double>(0, (sum, expense) => sum + expense.amount);
+    final matchesPeriod = (DateTime value) => date == null || (value.year == now.year && value.month == now.month && value.day == now.day);
+    final directCash = filteredSales.where((sale) => sale.saleType == SaleType.direct).fold<double>(0, (sum, sale) => sum + (sale.amountPaid ?? 0));
+    final customerCash = customerPayments.where((x) => matchesPeriod(x.date)).fold<double>(0, (sum, x) => sum + x.amount);
+    final representativeCash = representativeCollections.where((x) => matchesPeriod(x.date)).fold<double>(0, (sum, x) => sum + x.amount);
+    final purchaseCash = purchases.where((x) => matchesPeriod(x.date)).fold<double>(0, (sum, x) => sum + x.paidAmount);
+    final supplierCash = supplierPayments.where((x) => matchesPeriod(x.date)).fold<double>(0, (sum, x) => sum + x.amount);
     final representativeById = {
       for (final representative in representatives)
         representative.id: representative,
@@ -170,6 +191,9 @@ class DashboardRepositoryImpl implements DashboardRepository {
                     x.date.day == now.day),
           )
           .fold<double>(0, (sum, x) => sum + x.amount),
+      expenses: totalExpenses,
+      netProfit: salesProfit - totalExpenses,
+      operatingCashFlow: directCash + customerCash + representativeCash - purchaseCash - supplierCash - totalExpenses,
     );
   }
 }

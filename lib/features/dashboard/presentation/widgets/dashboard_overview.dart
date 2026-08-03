@@ -112,6 +112,21 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                                   icon: Icons.calendar_month_outlined,
                                 ),
                                 AppStatCard(
+                                  title: context.tr('Expenses'),
+                                  value: AppFormatters.compactCurrency.format(state.stats.expenses),
+                                  icon: Icons.money_off_csred_outlined,
+                                ),
+                                AppStatCard(
+                                  title: context.tr('Net profit'),
+                                  value: AppFormatters.compactCurrency.format(state.stats.netProfit),
+                                  icon: Icons.auto_graph_outlined,
+                                ),
+                                AppStatCard(
+                                  title: context.tr('Operating cash flow'),
+                                  value: AppFormatters.compactCurrency.format(state.stats.operatingCashFlow),
+                                  icon: Icons.currency_exchange_outlined,
+                                ),
+                                AppStatCard(
                                   title: context.tr('Low stock'),
                                   value: state.stats.lowStockProducts.length
                                       .toString(),

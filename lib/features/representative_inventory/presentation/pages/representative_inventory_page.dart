@@ -11,6 +11,7 @@ import 'package:pharmacy/features/representative_inventory/presentation/widgets/
 import 'package:pharmacy/features/representatives/data/model/representative_model.dart';
 import 'package:pharmacy/features/representatives/presentation/cubits/representatives_cubit.dart';
 import 'package:pharmacy/features/representatives/presentation/cubits/representatives_state.dart';
+import 'package:pharmacy/widgets/app_formatters.dart';
 
 class RepresentativeInventoryPage extends StatelessWidget {
   const RepresentativeInventoryPage({super.key});
@@ -88,6 +89,74 @@ class RepresentativeInventoryPage extends StatelessWidget {
                       else
                         const SizedBox(height: 4),
                       const SizedBox(height: 12),
+                      if (representatives.isNotEmpty)
+                        SizedBox(
+                          height: 118,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: representatives.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 12),
+                            itemBuilder: (_, index) {
+                              final representative = representatives[index];
+                              final rows = inventory.where(
+                                (x) => x.representativeId == representative.id,
+                              );
+                              final count = rows.fold<int>(
+                                0,
+                                (sum, x) => sum + x.remainingQuantity,
+                              );
+                              final cost = rows.fold<double>(
+                                0,
+                                (sum, x) =>
+                                    sum +
+                                    x.remainingQuantity *
+                                        (productById[x.productId]
+                                                ?.purchasePrice ??
+                                            0),
+                              );
+                              final saleValue = rows.fold<double>(
+                                0,
+                                (sum, x) =>
+                                    sum +
+                                    x.remainingQuantity *
+                                        (productById[x.productId]
+                                                ?.sellingPrice ??
+                                            0),
+                              );
+                              return SizedBox(
+                                width: 270,
+                                child: Card(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(12),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          representative.name,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.titleMedium,
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text('$count ${context.tr('items')} · ${context.tr('Cost')}: ${AppFormatters.compactCurrency.format(cost)}'),
+                                        Text(
+                                          '${context.tr('Sell value')}: ${AppFormatters.compactCurrency.format(saleValue)}',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      if (representatives.isNotEmpty)
+                        const SizedBox(height: 12),
                       Expanded(
                         child: Card(
                           elevation: 0,
@@ -96,8 +165,12 @@ class RepresentativeInventoryPage extends StatelessWidget {
                               scrollDirection: Axis.horizontal,
                               child: DataTable(
                                 columns: [
-                                  DataColumn(label: Text(context.tr('Representative'))),
-                                  DataColumn(label: Text(context.tr('Medicine'))),
+                                  DataColumn(
+                                    label: Text(context.tr('Representative')),
+                                  ),
+                                  DataColumn(
+                                    label: Text(context.tr('Medicine')),
+                                  ),
                                   DataColumn(
                                     label: Text(context.tr('Assigned')),
                                     numeric: true,

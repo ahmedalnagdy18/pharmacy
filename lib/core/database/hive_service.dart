@@ -11,6 +11,8 @@ import 'package:pharmacy/features/suppliers/data/model/supplier_model.dart';
 import 'package:pharmacy/features/purchases/data/model/purchase_model.dart';
 import 'package:pharmacy/features/suppliers/data/model/supplier_debt_model.dart';
 import 'package:pharmacy/features/suppliers/data/model/supplier_payment_model.dart';
+import 'package:pharmacy/features/expenses/data/model/expense_model.dart';
+import 'package:pharmacy/features/representatives/data/model/representative_collection_model.dart';
 
 class HiveService {
   HiveService._();
@@ -44,6 +46,8 @@ class HiveService {
       Hive.registerAdapter(SupplierDebtModelAdapter());
     if (!Hive.isAdapterRegistered(10))
       Hive.registerAdapter(SupplierPaymentModelAdapter());
+    if (!Hive.isAdapterRegistered(11)) Hive.registerAdapter(ExpenseModelAdapter());
+    if (!Hive.isAdapterRegistered(12)) Hive.registerAdapter(RepresentativeCollectionModelAdapter());
 
     await Future.wait([
       Hive.openBox<MedicineModel>(HiveBoxes.products),
@@ -59,6 +63,8 @@ class HiveService {
       Hive.openBox<PurchaseModel>(HiveBoxes.purchases),
       Hive.openBox<SupplierDebtModel>(HiveBoxes.supplierDebts),
       Hive.openBox<SupplierPaymentModel>(HiveBoxes.supplierPayments),
+      Hive.openBox<ExpenseModel>(HiveBoxes.expenses),
+      Hive.openBox<RepresentativeCollectionModel>(HiveBoxes.representativeCollections),
     ]);
   }
 
@@ -77,6 +83,8 @@ class HiveService {
       Hive.box<PurchaseModel>(HiveBoxes.purchases).clear(),
       Hive.box<SupplierDebtModel>(HiveBoxes.supplierDebts).clear(),
       Hive.box<SupplierPaymentModel>(HiveBoxes.supplierPayments).clear(),
+      Hive.box<ExpenseModel>(HiveBoxes.expenses).clear(),
+      Hive.box<RepresentativeCollectionModel>(HiveBoxes.representativeCollections).clear(),
     ]);
   }
 }

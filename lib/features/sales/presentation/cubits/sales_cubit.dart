@@ -3,6 +3,8 @@ import 'package:pharmacy/features/sales/data/model/sale_model.dart';
 import 'package:pharmacy/features/sales/domain/usecases/sales_usecases.dart';
 import 'package:pharmacy/features/sales/presentation/cubits/sales_state.dart';
 import 'package:uuid/uuid.dart';
+import 'package:pharmacy/features/representatives/data/data_source/representative_collections_local_data_source.dart';
+import 'package:pharmacy/features/representatives/data/model/representative_collection_model.dart';
 
 class SalesCubit extends Cubit<SalesState> {
   SalesCubit({
@@ -11,6 +13,7 @@ class SalesCubit extends Cubit<SalesState> {
     required this.createRepresentativeSale,
     required this.cancelSaleInvoice,
     required this.searchAndFilterSales,
+    required this.representativeCollectionsDataSource,
   }) : super(const SalesInitial());
 
   final GetSalesUseCase getSales;
@@ -18,6 +21,7 @@ class SalesCubit extends Cubit<SalesState> {
   final CreateRepresentativeSaleUseCase createRepresentativeSale;
   final CancelSaleInvoiceUseCase cancelSaleInvoice;
   final SearchAndFilterSalesUseCase searchAndFilterSales;
+  final RepresentativeCollectionsLocalDataSource representativeCollectionsDataSource;
   final _uuid = const Uuid();
 
   Future<void> load() async {
@@ -84,9 +88,16 @@ class SalesCubit extends Cubit<SalesState> {
   Future<void> addRepresentativeSales({
     required String representativeId,
     required List<SaleLine> lines,
+    String? customerName,
+    String? customerPhone,
+    required double amountCollected,
   }) async {
     emit(const SalesLoading());
     try {
+      final total = lines.fold<double>(0, (sum, line) => sum + line.quantity * line.unitPrice);
+      if (!amountCollected.isFinite || amountCollected < 0 || amountCollected > total) {
+        throw ArgumentError('Collected amount must be between zero and the invoice total.');
+      }
       final invoiceId = _uuid.v4();
       await createRepresentativeSale(
         lines
@@ -101,10 +112,17 @@ class SalesCubit extends Cubit<SalesState> {
                 saleType: SaleType.representative,
                 representativeId: representativeId,
                 invoiceId: invoiceId,
+                customerName: customerName,
+                customerPhone: customerPhone,
               ),
             )
             .toList(),
       );
+      if (amountCollected > 0) {
+        await representativeCollectionsDataSource.save(
+          RepresentativeCollectionModel(id: _uuid.v4(), representativeId: representativeId, invoiceId: invoiceId, amount: amountCollected, date: DateTime.now()),
+        );
+      }
       emit(SalesLoaded(await getSales()));
     } catch (error) {
       emit(SalesError(error.toString()));

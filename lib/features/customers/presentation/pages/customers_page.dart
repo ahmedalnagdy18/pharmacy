@@ -8,6 +8,9 @@ import 'package:pharmacy/features/customers/presentation/cubits/customers_state.
 import 'package:pharmacy/widgets/app_formatters.dart';
 import 'package:pharmacy/features/sales/presentation/cubits/sales_cubit.dart';
 import 'package:pharmacy/widgets/date_filter_bar.dart';
+import 'package:pharmacy/features/sales/presentation/cubits/sales_state.dart';
+import 'package:pharmacy/features/representatives/presentation/cubits/representatives_cubit.dart';
+import 'package:pharmacy/features/representatives/presentation/cubits/representatives_state.dart';
 
 class CustomersPage extends StatefulWidget {
   const CustomersPage({super.key});
@@ -32,6 +35,10 @@ class _CustomersPageState extends State<CustomersPage> {
   ) => BlocBuilder<CustomersCubit, CustomersState>(
     builder: (context, state) {
       final data = state is CustomersLoaded ? state : null;
+      final salesState = context.watch<SalesCubit>().state;
+      final sales = salesState is SalesLoaded ? salesState.sales : const [];
+      final representativesState = context.watch<RepresentativesCubit>().state;
+      final representatives = representativesState is RepresentativesLoaded ? {for (final representative in representativesState.representatives) representative.id: representative.name} : const <String, String>{};
       final q = _search.text.toLowerCase();
       final customers = (data?.customers ?? const <CustomerModel>[])
           .where(
@@ -150,6 +157,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         numeric: true,
                       ),
                       DataColumn(label: Text(context.tr('Last payment'))),
+                      DataColumn(label: Text(context.tr('Representative customers'))),
                       DataColumn(label: Text(context.tr('Actions'))),
                     ],
                     rows: customers.map((customer) {
@@ -170,6 +178,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         0,
                         (sum, d) => sum + d.remainingAmount,
                       );
+                      final repNames = sales.where((sale) => sale.customerId == customer.id && sale.representativeId != null).map((sale) => representatives[sale.representativeId] ?? '-').toSet().join(', ');
                       return DataRow(
                         cells: [
                           DataCell(Text(customer.name)),
@@ -185,6 +194,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                     ),
                             ),
                           ),
+                          DataCell(Text(repNames.isEmpty ? '-' : repNames)),
                           DataCell(
                             Row(
                               mainAxisSize: MainAxisSize.min,
@@ -193,6 +203,11 @@ class _CustomersPageState extends State<CustomersPage> {
                                   tooltip: 'View details',
                                   onPressed: () => _details(context, customer),
                                   icon: const Icon(Icons.visibility_outlined),
+                                ),
+                                IconButton(
+                                  tooltip: context.tr('Add debt'),
+                                  onPressed: () => _addDebtDialog(context, customer),
+                                  icon: const Icon(Icons.add_card_outlined),
                                 ),
                                 IconButton(
                                   tooltip: 'Record payment',
@@ -244,6 +259,7 @@ class _CustomersPageState extends State<CustomersPage> {
     final phone = TextEditingController(text: customer?.phone);
     final address = TextEditingController(text: customer?.address);
     final notes = TextEditingController(text: customer?.notes);
+    final openingDebt = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (d) => AlertDialog(
@@ -278,6 +294,10 @@ class _CustomersPageState extends State<CustomersPage> {
                   controller: notes,
                   decoration: const InputDecoration(labelText: 'Notes'),
                 ),
+                if (customer == null) ...[
+                  const SizedBox(height: 10),
+                  TextFormField(controller: openingDebt, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: context.tr('Opening debt (optional)')), validator: (v) => v == null || v.isEmpty || (double.tryParse(v) ?? -1) >= 0 ? null : 'Enter a valid amount'),
+                ],
               ],
             ),
           ),
@@ -303,7 +323,19 @@ class _CustomersPageState extends State<CustomersPage> {
         phone: phone.text,
         address: address.text,
         notes: notes.text,
+        openingDebt: double.tryParse(openingDebt.text) ?? 0,
       );
+  }
+
+  Future<void> _addDebtDialog(BuildContext context, CustomerModel customer) async {
+    final controller = TextEditingController();
+    final form = GlobalKey<FormState>();
+    final ok = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(
+      title: Text('${context.tr('Add debt')} — ${customer.name}'),
+      content: SizedBox(width: 340, child: Form(key: form, child: TextFormField(controller: controller, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: context.tr('Opening / additional debt')), validator: (v) => (double.tryParse(v ?? '') ?? 0) <= 0 ? 'Enter a valid amount' : null))),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(context.tr('Cancel'))), FilledButton(onPressed: () { if (form.currentState!.validate()) Navigator.pop(dialogContext, true); }, child: Text(context.tr('Add')))],
+    ));
+    if (ok == true && context.mounted) await context.read<CustomersCubit>().addDebt(customerId: customer.id, amount: double.parse(controller.text));
   }
 
   Future<void> _paymentDialog(
@@ -332,7 +364,7 @@ class _CustomersPageState extends State<CustomersPage> {
                         (x) => DropdownMenuItem(
                           value: x.id,
                           child: Text(
-                            '${AppFormatters.invoiceNumber(x.invoiceId)} • ${AppFormatters.currency.format(x.remainingAmount)}',
+                            '${x.invoiceId.startsWith('opening-') ? context.tr('Opening balance') : AppFormatters.invoiceNumber(x.invoiceId)} • ${AppFormatters.currency.format(x.remainingAmount)}',
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -344,7 +376,7 @@ class _CustomersPageState extends State<CustomersPage> {
                 const SizedBox(height: 10),
                 TextFormField(
                   controller: amount,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(labelText: 'Amount'),
                   validator: (v) => double.tryParse(v ?? '') == null
                       ? 'Enter a valid amount'
@@ -411,7 +443,7 @@ class _CustomersPageState extends State<CustomersPage> {
               ),
               ...debts.map(
                 (x) => ListTile(
-                  title: Text(AppFormatters.invoiceNumber(x.invoiceId)),
+                  title: Text(x.invoiceId.startsWith('opening-') ? context.tr('Opening balance') : AppFormatters.invoiceNumber(x.invoiceId)),
                   subtitle: Text(x.status),
                   trailing: Text(
                     AppFormatters.currency.format(x.remainingAmount),

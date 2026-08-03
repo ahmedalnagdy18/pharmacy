@@ -90,6 +90,7 @@ class _SaleDialogState extends State<SaleDialog> {
   void initState() {
     super.initState();
     _saleType = widget.initialSaleType;
+    _paid.text = '0';
     _representativeId = widget.representatives.firstOrNull?.id;
     _addLine();
   }
@@ -214,7 +215,9 @@ class _SaleDialogState extends State<SaleDialog> {
                   ),
                   const SizedBox(height: 12),
                 ],
-                if (_saleType == SaleType.direct) ...[
+                // A representative sale also records the end customer, so their
+                // details remain available to the business if the rep leaves.
+                ...[
                   Autocomplete<CustomerModel>(
                     displayStringForOption: (x) => '${x.name} (${x.phone})',
                     optionsBuilder: (value) => widget.customers.where(
@@ -233,8 +236,8 @@ class _SaleDialogState extends State<SaleDialog> {
                         TextFormField(
                           controller: controller,
                           focusNode: focusNode,
-                          decoration: const InputDecoration(
-                            labelText: 'Customer name',
+                          decoration: InputDecoration(
+                            labelText: context.tr('Customer name'),
                           ),
                           onChanged: (value) {
                             _customerName.text = value;
@@ -248,8 +251,8 @@ class _SaleDialogState extends State<SaleDialog> {
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _customerPhone,
-                    decoration: const InputDecoration(
-                      labelText: 'Phone number',
+                    decoration: InputDecoration(
+                      labelText: context.tr('Phone number'),
                     ),
                     validator: (value) => value == null || value.trim().isEmpty
                         ? 'Required'
@@ -301,7 +304,7 @@ class _SaleDialogState extends State<SaleDialog> {
                         Expanded(
                           child: TextFormField(
                             controller: line.quantity,
-                            keyboardType: TextInputType.number,
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
@@ -362,8 +365,7 @@ class _SaleDialogState extends State<SaleDialog> {
                   icon: const Icon(Icons.add),
                   label: Text(context.localized('Add medicine', 'إضافة منتج')),
                 ),
-                if (_saleType == SaleType.direct)
-                  TextFormField(
+                TextFormField(
                     controller: _paid,
                     decoration: InputDecoration(
                       labelText: context.localized(
@@ -371,7 +373,7 @@ class _SaleDialogState extends State<SaleDialog> {
                         'المبلغ المدفوع',
                       ),
                     ),
-                    keyboardType: TextInputType.number,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
                     inputFormatters: [
                       FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                     ],
@@ -421,13 +423,9 @@ class _SaleDialogState extends State<SaleDialog> {
               ),
             )
             .toList(),
-        amountPaid: _saleType == SaleType.direct ? double.parse(_paid.text) : 0,
-        customerName: _saleType == SaleType.direct
-            ? _customerName.text.trim()
-            : null,
-        customerPhone: _saleType == SaleType.direct
-            ? _customerPhone.text.trim()
-            : null,
+        amountPaid: double.parse(_paid.text),
+        customerName: _customerName.text.trim(),
+        customerPhone: _customerPhone.text.trim(),
       ),
     );
   }

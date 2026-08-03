@@ -12,4 +12,6 @@ class HiveBoxes {
   static const purchases = 'purchases';
   static const supplierDebts = 'supplier_debts';
   static const supplierPayments = 'supplier_payments';
+  static const expenses = 'expenses';
+  static const representativeCollections = 'representative_collections';
 }

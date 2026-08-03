@@ -170,7 +170,7 @@ class _ProductDialogState extends State<ProductDialog> {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(labelText: label),
-      keyboardType: TextInputType.number,
+      keyboardType: TextInputType.numberWithOptions(decimal: !integerOnly),
       inputFormatters: [
         FilteringTextInputFormatter.allow(
           integerOnly ? RegExp(r'[0-9]') : RegExp(r'[0-9.]'),

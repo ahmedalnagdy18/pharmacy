@@ -8,5 +8,6 @@ abstract class SuppliersRepository {
   Future<void> delete(String id);
   Future<List<SupplierDebtModel>> debts([String? id]);
   Future<List<SupplierPaymentModel>> payments([String? id]);
+  Future<void> createDebt(SupplierDebtModel debt);
   Future<void> payment(SupplierPaymentModel x);
 }

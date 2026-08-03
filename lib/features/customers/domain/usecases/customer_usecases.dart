@@ -16,4 +16,5 @@ class CustomerUseCases {
   Future<List<CustomerPaymentModel>> payments([String? id]) =>
       repository.getPayments(id);
   Future<void> payment(CustomerPaymentModel x) => repository.recordPayment(x);
+  Future<void> addDebt(CustomerDebtModel x) => repository.createDebt(x);
 }

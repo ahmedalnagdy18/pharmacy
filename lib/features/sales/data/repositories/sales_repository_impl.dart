@@ -8,6 +8,7 @@ import 'package:pharmacy/features/customers/data/data_source/customers_local_dat
 import 'package:pharmacy/features/customers/data/model/customer_debt_model.dart';
 import 'package:pharmacy/features/customers/data/model/customer_model.dart';
 import 'package:uuid/uuid.dart';
+import 'package:pharmacy/features/representatives/data/data_source/representative_collections_local_data_source.dart';
 
 class SalesRepositoryImpl implements SalesRepository {
   const SalesRepositoryImpl({
@@ -15,12 +16,14 @@ class SalesRepositoryImpl implements SalesRepository {
     required this.productsDataSource,
     required this.inventoryDataSource,
     required this.customersDataSource,
+    required this.representativeCollectionsDataSource,
   });
 
   final SalesLocalDataSource salesDataSource;
   final ProductsLocalDataSource productsDataSource;
   final RepresentativeInventoryLocalDataSource inventoryDataSource;
   final CustomersLocalDataSource customersDataSource;
+  final RepresentativeCollectionsLocalDataSource representativeCollectionsDataSource;
 
   @override
   Future<List<SaleModel>> getSales() => salesDataSource.getAll();
@@ -83,6 +86,14 @@ class SalesRepositoryImpl implements SalesRepository {
         'Paid amount must be between zero and the invoice total.',
       );
     }
+    // Validate stock before creating a customer, so a failed sale never leaves
+    // an orphan customer record behind.
+    for (final sale in sales) {
+      if (sale.quantity <= 0) throw const AppException('Sale quantity must be greater than zero.');
+      final product = await productsDataSource.getById(sale.productId);
+      if (product == null) throw const AppException('Product was not found.');
+      if (product.quantity < sale.quantity) throw const AppException('Not enough warehouse stock.');
+    }
     String? customerId = firstSale.customerId;
     if ((firstSale.customerName ?? '').trim().isNotEmpty ||
         (firstSale.customerPhone ?? '').trim().isNotEmpty) {
@@ -137,6 +148,7 @@ class SalesRepositoryImpl implements SalesRepository {
           customerId: customerId,
           invoiceId: firstSale.invoiceId ?? firstSale.id,
           amountPaid: linePaid,
+          unitCost: product.purchasePrice,
         ),
       );
     }
@@ -166,7 +178,12 @@ class SalesRepositoryImpl implements SalesRepository {
     if (representativeId == null || representativeId.isEmpty) {
       throw const AppException('Representative is required.');
     }
-
+    String? customerId;
+    final customerName = (sales.first.customerName ?? '').trim();
+    final customerPhone = (sales.first.customerPhone ?? '').trim();
+    if (customerName.isEmpty || customerPhone.isEmpty) {
+      throw const AppException('Customer name and phone are required for a representative sale.');
+    }
     for (final sale in sales) {
       if (sale.quantity <= 0 || sale.representativeId != representativeId) {
         throw const AppException('Check sale items and representative.');
@@ -178,6 +195,13 @@ class SalesRepositoryImpl implements SalesRepository {
       if (inventory == null || inventory.remainingQuantity < sale.quantity) {
         throw const AppException('Not enough representative stock.');
       }
+    }
+    final existingCustomer = await customersDataSource.findByPhone(customerPhone);
+    if (existingCustomer != null) {
+      customerId = existingCustomer.id;
+    } else {
+      customerId = const Uuid().v4();
+      await customersDataSource.saveCustomer(CustomerModel(id: customerId, name: customerName, phone: customerPhone, address: '', notes: '', createdAt: DateTime.now()));
     }
     for (final sale in sales) {
       final inventory = await inventoryDataSource.getByRepresentativeAndProduct(
@@ -193,6 +217,9 @@ class SalesRepositoryImpl implements SalesRepository {
         sale.copyWith(
           saleType: SaleType.representative,
           invoiceId: sales.first.invoiceId ?? sales.first.id,
+          customerId: customerId,
+          amountPaid: 0,
+          unitCost: (await productsDataSource.getById(sale.productId))?.purchasePrice ?? 0,
         ),
       );
     }
@@ -204,6 +231,10 @@ class SalesRepositoryImpl implements SalesRepository {
         .where((sale) => sale.invoiceId == invoiceId || sale.id == invoiceId)
         .toList();
     if (sales.isEmpty) throw const AppException('Invoice was not found.');
+    final canonicalInvoiceId = sales.first.invoiceId ?? sales.first.id;
+    if (sales.first.saleType == SaleType.representative && await representativeCollectionsDataSource.hasInvoiceCollections(canonicalInvoiceId)) {
+      throw const AppException('A representative sale with recorded collections cannot be cancelled.');
+    }
     final debts = (await customersDataSource.getDebts())
         .where((debt) => debt.invoiceId == invoiceId)
         .toList();

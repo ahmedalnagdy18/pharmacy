@@ -37,6 +37,11 @@ import 'package:pharmacy/features/purchases/data/data_source/purchases_local_dat
 import 'package:pharmacy/features/purchases/data/model/purchase_model.dart';
 import 'package:pharmacy/features/purchases/data/repositories/purchases_repository_impl.dart';
 import 'package:pharmacy/features/purchases/domain/usecases/purchase_usecases.dart';
+import 'package:pharmacy/features/expenses/data/data_source/expenses_local_data_source.dart';
+import 'package:pharmacy/features/expenses/data/model/expense_model.dart';
+import 'package:pharmacy/features/expenses/domain/usecases/expense_usecases.dart';
+import 'package:pharmacy/features/representatives/data/data_source/representative_collections_local_data_source.dart';
+import 'package:pharmacy/features/representatives/data/model/representative_collection_model.dart';
 
 class AppDependencies {
   AppDependencies() {
@@ -65,6 +70,8 @@ class AppDependencies {
     purchasesDataSource = PurchasesLocalDataSource(
       Hive.box<PurchaseModel>(HiveBoxes.purchases),
     );
+    expensesDataSource = ExpensesLocalDataSource(Hive.box<ExpenseModel>(HiveBoxes.expenses));
+    representativeCollectionsDataSource = RepresentativeCollectionsLocalDataSource(Hive.box<RepresentativeCollectionModel>(HiveBoxes.representativeCollections));
 
     productsRepository = ProductsRepositoryImpl(productsDataSource);
     representativesRepository = RepresentativesRepositoryImpl(
@@ -79,6 +86,7 @@ class AppDependencies {
       customersDataSource: customersDataSource,
       productsDataSource: productsDataSource,
       inventoryDataSource: inventoryDataSource,
+      representativeCollectionsDataSource: representativeCollectionsDataSource,
     );
     customersRepository = CustomersRepositoryImpl(
       source: customersDataSource,
@@ -99,6 +107,9 @@ class AppDependencies {
       salesDataSource: salesDataSource,
       customersDataSource: customersDataSource,
       suppliersDataSource: suppliersDataSource,
+      expensesDataSource: expensesDataSource,
+      purchasesDataSource: purchasesDataSource,
+      representativeCollectionsDataSource: representativeCollectionsDataSource,
     );
     appDataRepository = const AppDataRepositoryImpl();
 
@@ -122,6 +133,7 @@ class AppDependencies {
     customerUseCases = CustomerUseCases(customersRepository);
     supplierUseCases = SupplierUseCases(suppliersRepository);
     purchaseUseCases = PurchaseUseCases(purchasesRepository);
+    expenseUseCases = ExpenseUseCases(expensesDataSource);
     reportsUseCases = ReportsUseCases(
       dashboardRepository: dashboardRepository,
       salesRepository: salesRepository,
@@ -135,6 +147,8 @@ class AppDependencies {
   late final CustomersLocalDataSource customersDataSource;
   late final SuppliersLocalDataSource suppliersDataSource;
   late final PurchasesLocalDataSource purchasesDataSource;
+  late final ExpensesLocalDataSource expensesDataSource;
+  late final RepresentativeCollectionsLocalDataSource representativeCollectionsDataSource;
 
   late final ProductsRepositoryImpl productsRepository;
   late final RepresentativesRepositoryImpl representativesRepository;
@@ -164,5 +178,6 @@ class AppDependencies {
   late final CustomerUseCases customerUseCases;
   late final SupplierUseCases supplierUseCases;
   late final PurchaseUseCases purchaseUseCases;
+  late final ExpenseUseCases expenseUseCases;
   late final ReportsUseCases reportsUseCases;
 }

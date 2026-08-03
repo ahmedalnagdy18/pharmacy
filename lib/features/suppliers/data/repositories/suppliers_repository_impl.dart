@@ -24,12 +24,25 @@ class SuppliersRepositoryImpl implements SuppliersRepository {
   }
 
   @override
-  Future<void> delete(String id) => source.deleteSupplier(id);
+  Future<void> delete(String id) async {
+    final debts = await source.getDebts(id);
+    if (debts.any((x) => x.status == DebtStatus.pending)) {
+      throw const AppException('Suppliers with outstanding debts cannot be deleted.');
+    }
+    await source.deleteSupplier(id);
+  }
   @override
   Future<List<SupplierDebtModel>> debts([String? id]) => source.getDebts(id);
   @override
   Future<List<SupplierPaymentModel>> payments([String? id]) =>
       source.getPayments(id);
+  @override
+  Future<void> createDebt(SupplierDebtModel debt) async {
+    if (!debt.remainingAmount.isFinite || debt.remainingAmount <= 0) {
+      throw const AppException('Debt amount must be greater than zero.');
+    }
+    await source.saveDebt(debt);
+  }
   @override
   Future<void> payment(SupplierPaymentModel x) async {
     if (x.amount <= 0)

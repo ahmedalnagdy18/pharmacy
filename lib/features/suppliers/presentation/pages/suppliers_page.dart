@@ -155,6 +155,11 @@ class _SuppliersPageState extends State<SuppliersPage> {
                                   icon: const Icon(Icons.visibility_outlined),
                                 ),
                                 IconButton(
+                                  tooltip: context.tr('Add debt'),
+                                  onPressed: () => _addDebt(context, supplier),
+                                  icon: const Icon(Icons.add_card_outlined),
+                                ),
+                                IconButton(
                                   tooltip: 'Record payment',
                                   onPressed: debts.isEmpty
                                       ? null
@@ -196,6 +201,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
     final phone = TextEditingController(text: supplier?.phone);
     final company = TextEditingController(text: supplier?.company);
     final notes = TextEditingController(text: supplier?.notes);
+    final openingDebt = TextEditingController();
     final ok = await showDialog<bool>(
       context: context,
       builder: (d) => AlertDialog(
@@ -228,6 +234,10 @@ class _SuppliersPageState extends State<SuppliersPage> {
                   controller: notes,
                   decoration: const InputDecoration(labelText: 'Notes'),
                 ),
+                if (supplier == null) ...[
+                  const SizedBox(height: 10),
+                  TextFormField(controller: openingDebt, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: context.tr('Opening debt (optional)')), validator: (v) => v == null || v.isEmpty || (double.tryParse(v) ?? -1) >= 0 ? null : 'Enter a valid amount'),
+                ],
               ],
             ),
           ),
@@ -253,7 +263,19 @@ class _SuppliersPageState extends State<SuppliersPage> {
         phone: phone.text,
         company: company.text,
         notes: notes.text,
+        openingDebt: double.tryParse(openingDebt.text) ?? 0,
       );
+  }
+
+  Future<void> _addDebt(BuildContext context, SupplierModel supplier) async {
+    final controller = TextEditingController();
+    final form = GlobalKey<FormState>();
+    final ok = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(
+      title: Text('${context.tr('Add debt')} — ${supplier.name}'),
+      content: SizedBox(width: 340, child: Form(key: form, child: TextFormField(controller: controller, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: InputDecoration(labelText: context.tr('Opening / additional debt')), validator: (v) => (double.tryParse(v ?? '') ?? 0) <= 0 ? 'Enter a valid amount' : null))),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(context.tr('Cancel'))), FilledButton(onPressed: () { if (form.currentState!.validate()) Navigator.pop(dialogContext, true); }, child: Text(context.tr('Add')))],
+    ));
+    if (ok == true && context.mounted) await context.read<SuppliersCubit>().addDebt(supplierId: supplier.id, amount: double.parse(controller.text));
   }
 
   Future<void> _payment(
@@ -283,7 +305,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
                         (debt) => DropdownMenuItem(
                           value: debt.id,
                           child: Text(
-                            'Purchase #${debt.purchaseId.substring(0, 8)} • ${AppFormatters.currency.format(debt.remainingAmount)}',
+                            '${debt.purchaseId.startsWith('opening-') ? context.tr('Opening balance') : 'Purchase #${debt.purchaseId.substring(0, 8)}'} • ${AppFormatters.currency.format(debt.remainingAmount)}',
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -295,7 +317,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
                 const SizedBox(height: 10),
                 TextFormField(
                   controller: amount,
-                  keyboardType: TextInputType.number,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                   decoration: const InputDecoration(labelText: 'Amount'),
                   validator: (value) {
                     final amount = double.tryParse(value ?? '');
@@ -365,7 +387,7 @@ class _SuppliersPageState extends State<SuppliersPage> {
               ),
               ...debts.map(
                 (debt) => ListTile(
-                  title: Text('Purchase #${debt.purchaseId.substring(0, 8)}'),
+                  title: Text(debt.purchaseId.startsWith('opening-') ? context.tr('Opening balance') : 'Purchase #${debt.purchaseId.substring(0, 8)}'),
                   subtitle: Text(
                     '${debt.status} • ${AppFormatters.dateTime.format(debt.date)}',
                   ),

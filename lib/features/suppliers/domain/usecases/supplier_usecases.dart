@@ -13,4 +13,5 @@ class SupplierUseCases {
   Future<List<SupplierPaymentModel>> payments([String? id]) =>
       repository.payments(id);
   Future<void> payment(SupplierPaymentModel x) => repository.payment(x);
+  Future<void> addDebt(SupplierDebtModel x) => repository.createDebt(x);
 }

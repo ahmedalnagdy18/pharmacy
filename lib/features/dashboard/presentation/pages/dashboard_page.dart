@@ -25,6 +25,9 @@ import 'package:pharmacy/features/suppliers/presentation/pages/suppliers_page.da
 import 'package:pharmacy/features/suppliers/presentation/cubits/suppliers_cubit.dart';
 import 'package:pharmacy/features/purchases/presentation/pages/purchases_page.dart';
 import 'package:pharmacy/features/purchases/presentation/cubits/purchases_cubit.dart';
+import 'package:pharmacy/features/expenses/presentation/pages/expenses_page.dart';
+import 'package:pharmacy/features/expenses/presentation/cubits/expenses_cubit.dart';
+import 'package:pharmacy/features/representatives/presentation/cubits/representative_collections_cubit.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -45,6 +48,7 @@ class _DashboardPageState extends State<DashboardPage> {
     CustomersPage(),
     SuppliersPage(),
     PurchasesPage(),
+    ExpensesPage(),
     ReportsPage(),
   ];
 
@@ -105,14 +109,7 @@ class _DashboardPageState extends State<DashboardPage> {
             final compactNavigation = constraints.maxWidth < 1000;
             return Row(
               children: [
-                NavigationRail(
-                  selectedIndex: _selectedIndex,
-                  onDestinationSelected: _selectPage,
-                  labelType: compactNavigation
-                      ? NavigationRailLabelType.none
-                      : NavigationRailLabelType.all,
-                  destinations: _destinations(context),
-                ),
+                _sideMenu(context, compactNavigation),
                 const VerticalDivider(width: 1),
                 Expanded(
                   child: Stack(
@@ -212,6 +209,11 @@ class _DashboardPageState extends State<DashboardPage> {
         label: Text(context.localized('Purchases', 'المشتريات')),
       ),
       NavigationRailDestination(
+        icon: Icon(Icons.receipt_long_outlined),
+        selectedIcon: Icon(Icons.receipt_long),
+        label: Text(context.localized('Expenses', 'المصروفات')),
+      ),
+      NavigationRailDestination(
         icon: Icon(Icons.assessment_outlined),
         selectedIcon: Icon(Icons.assessment),
         label: Text(context.localized('Reports', 'التقارير')),
@@ -219,11 +221,69 @@ class _DashboardPageState extends State<DashboardPage> {
     ];
   }
 
+  /// A scrollable rail built without NavigationRail's internal Expanded
+  /// layout, which needs a bounded height and crashes inside a scroll view.
+  Widget _sideMenu(BuildContext context, bool compact) {
+    final destinations = _destinations(context);
+    return SizedBox(
+      width: compact ? 72 : 172,
+      child: Material(
+        color: Theme.of(context).colorScheme.surface,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: List.generate(destinations.length, (index) {
+              final destination = destinations[index];
+              final selected = _selectedIndex == index;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Tooltip(
+                  message: (destination.label as Text).data ?? '',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => _selectPage(index),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: compact ? 0 : 12,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected
+                            ? Theme.of(context).colorScheme.secondaryContainer
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: compact
+                          ? (selected
+                              ? destination.selectedIcon ?? destination.icon
+                              : destination.icon)
+                          : Row(
+                              children: [
+                                selected
+                                    ? destination.selectedIcon ?? destination.icon
+                                    : destination.icon,
+                                const SizedBox(width: 12),
+                                Expanded(child: destination.label),
+                              ],
+                            ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _selectPage(int index) {
     setState(() => _selectedIndex = index);
     switch (index) {
       case 0:
-      case 8:
+      case 9:
         context.read<DashboardCubit>().load();
         break;
       case 1:
@@ -231,6 +291,10 @@ class _DashboardPageState extends State<DashboardPage> {
         break;
       case 2:
         context.read<RepresentativesCubit>().load();
+        context.read<RepresentativeInventoryCubit>().load();
+        context.read<ProductsCubit>().load();
+        context.read<SalesCubit>().load();
+        context.read<RepresentativeCollectionsCubit>().load();
         break;
       case 3:
         context.read<RepresentativeInventoryCubit>().load();
@@ -253,6 +317,9 @@ class _DashboardPageState extends State<DashboardPage> {
         context.read<PurchasesCubit>().load();
         context.read<ProductsCubit>().load();
         context.read<SuppliersCubit>().load();
+        break;
+      case 8:
+        context.read<ExpensesCubit>().load();
         break;
     }
   }
@@ -291,6 +358,8 @@ class _DashboardPageState extends State<DashboardPage> {
     context.read<CustomersCubit>().load();
     context.read<SuppliersCubit>().load();
     context.read<PurchasesCubit>().load();
+    context.read<ExpensesCubit>().load();
+    context.read<RepresentativeCollectionsCubit>().load();
     context.read<DashboardCubit>().load();
   }
 

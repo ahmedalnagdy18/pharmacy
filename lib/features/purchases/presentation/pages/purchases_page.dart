@@ -334,7 +334,7 @@ class _PurchaseDialogState extends State<_PurchaseDialog> {
                       Expanded(
                         child: TextFormField(
                           controller: line.quantity,
-                          keyboardType: TextInputType.number,
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           onChanged: (_) => setState(() {}),
                           validator: (x) => (int.tryParse(x ?? '') ?? 0) > 0
                               ? null
@@ -383,7 +383,7 @@ class _PurchaseDialogState extends State<_PurchaseDialog> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _paid,
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 decoration: const InputDecoration(labelText: 'Amount paid'),
                 validator: (x) {
                   final value = double.tryParse(x ?? '');

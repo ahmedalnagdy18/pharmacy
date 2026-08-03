@@ -23,6 +23,7 @@ class SaleModel extends Equatable {
     this.customerPhone,
     this.invoiceId,
     this.amountPaid,
+    this.unitCost = 0,
   });
 
   final String id;
@@ -38,6 +39,7 @@ class SaleModel extends Equatable {
   final String? customerPhone;
   final String? invoiceId;
   final double? amountPaid;
+  final double unitCost;
 
   SaleModel copyWith({
     String? id,
@@ -53,6 +55,7 @@ class SaleModel extends Equatable {
     String? customerPhone,
     String? invoiceId,
     double? amountPaid,
+    double? unitCost,
   }) {
     return SaleModel(
       id: id ?? this.id,
@@ -68,6 +71,7 @@ class SaleModel extends Equatable {
       customerPhone: customerPhone ?? this.customerPhone,
       invoiceId: invoiceId ?? this.invoiceId,
       amountPaid: amountPaid ?? this.amountPaid,
+      unitCost: unitCost ?? this.unitCost,
     );
   }
 
@@ -86,6 +90,7 @@ class SaleModel extends Equatable {
     customerPhone,
     invoiceId,
     amountPaid,
+    unitCost,
   ];
 }
 
@@ -113,13 +118,14 @@ class SaleModelAdapter extends TypeAdapter<SaleModel> {
       customerPhone: fields[10] as String?,
       invoiceId: fields[11] as String?,
       amountPaid: fields[12] as double?,
+      unitCost: fields[13] as double? ?? 0,
     );
   }
 
   @override
   void write(BinaryWriter writer, SaleModel obj) {
     writer
-      ..writeByte(13)
+      ..writeByte(14)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -145,6 +151,8 @@ class SaleModelAdapter extends TypeAdapter<SaleModel> {
       ..writeByte(11)
       ..write(obj.invoiceId)
       ..writeByte(12)
-      ..write(obj.amountPaid);
+      ..write(obj.amountPaid)
+      ..writeByte(13)
+      ..write(obj.unitCost);
   }
 }

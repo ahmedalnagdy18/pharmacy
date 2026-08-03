@@ -21,6 +21,8 @@ import 'package:pharmacy/features/customers/data/model/customer_debt_model.dart'
 import 'package:pharmacy/features/customers/presentation/cubits/customers_cubit.dart';
 import 'package:pharmacy/features/customers/presentation/cubits/customers_state.dart';
 import 'package:pharmacy/widgets/date_filter_bar.dart';
+import 'package:pharmacy/features/representatives/data/model/representative_collection_model.dart';
+import 'package:pharmacy/features/representatives/presentation/cubits/representative_collections_cubit.dart';
 
 class SalesPage extends StatefulWidget {
   const SalesPage({super.key});
@@ -68,6 +70,8 @@ class _SalesPageState extends State<SalesPage> {
                         inventoryState is RepresentativeInventoryLoaded
                         ? inventoryState.inventory
                         : const <RepresentativeInventoryModel>[];
+                    final collectionsState = context.watch<RepresentativeCollectionsCubit>().state;
+                    final collections = collectionsState is RepresentativeCollectionsLoaded ? collectionsState.items : const <RepresentativeCollectionModel>[];
                     final productById = {
                       for (final product in products) product.id: product,
                     };
@@ -100,6 +104,7 @@ class _SalesPageState extends State<SalesPage> {
                     final displaySales = _groupSales(
                       filteredSales,
                       productById,
+                      collections,
                     );
 
                     return Padding(
@@ -124,6 +129,7 @@ class _SalesPageState extends State<SalesPage> {
                                   context
                                       .read<RepresentativeInventoryCubit>()
                                       .load();
+                                  context.read<RepresentativeCollectionsCubit>().load();
                                 },
                                 icon: const Icon(Icons.refresh),
                               ),
@@ -333,6 +339,11 @@ class _SalesPageState extends State<SalesPage> {
                                                       MainAxisSize.min,
                                                   children: [
                                                     IconButton(
+                                                      tooltip: context.tr('View details'),
+                                                      icon: const Icon(Icons.visibility_outlined),
+                                                      onPressed: () => _showInvoiceDetails(context, sale, sales, collections, productById),
+                                                    ),
+                                                    IconButton(
                                                       tooltip: 'Print invoice',
                                                       icon: const Icon(
                                                         Icons.print_outlined,
@@ -419,6 +430,7 @@ class _SalesPageState extends State<SalesPage> {
   List<SaleModel> _groupSales(
     List<SaleModel> sales,
     Map<String, MedicineModel> products,
+    List<RepresentativeCollectionModel> collections,
   ) {
     final groups = <String, List<SaleModel>>{};
     for (final sale in sales) {
@@ -428,7 +440,10 @@ class _SalesPageState extends State<SalesPage> {
       final items = entry.value;
       final first = items.first;
       final total = items.fold<double>(0, (sum, item) => sum + item.total);
-      final paid = first.amountPaid ?? total;
+      final invoiceId = first.invoiceId ?? first.id;
+      final paid = first.saleType == SaleType.representative
+          ? collections.where((collection) => collection.invoiceId == invoiceId).fold<double>(0, (sum, collection) => sum + collection.amount)
+          : first.amountPaid ?? total;
       final names = items
           .map(
             (item) =>
@@ -484,6 +499,24 @@ class _SalesPageState extends State<SalesPage> {
     }
   }
 
+  void _showInvoiceDetails(BuildContext context, SaleModel invoice, List<SaleModel> allSales, List<RepresentativeCollectionModel> collections, Map<String, MedicineModel> products) {
+    final invoiceId = invoice.invoiceId ?? invoice.id;
+    final lines = allSales.where((sale) => (sale.invoiceId ?? sale.id) == invoiceId).toList();
+    final invoiceCollections = collections.where((collection) => collection.invoiceId == invoiceId).toList();
+    showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
+      title: Text('${context.tr('Invoice')} ${AppFormatters.invoiceNumber(invoiceId)}'),
+      content: SizedBox(width: 560, height: 420, child: ListView(children: [
+        Text('${context.tr('Customer')}: ${invoice.customerName ?? '-'} · ${invoice.customerPhone ?? '-'}'),
+        const Divider(),
+        ...lines.map((line) => ListTile(title: Text(products[line.productId]?.name ?? '-'), subtitle: Text('${line.quantity} × ${AppFormatters.currency.format(line.unitPrice)}'), trailing: Text(AppFormatters.currency.format(line.total)))),
+        const Divider(),
+        Text(context.tr('Payment history'), style: Theme.of(context).textTheme.titleMedium),
+        if (invoice.saleType == SaleType.representative) ...invoiceCollections.map((item) => ListTile(leading: const Icon(Icons.payments_outlined), title: Text(AppFormatters.currency.format(item.amount)), subtitle: Text(AppFormatters.dateTime.format(item.date)))) else ListTile(title: Text(AppFormatters.currency.format(invoice.amountPaid ?? invoice.total)), subtitle: Text(AppFormatters.dateTime.format(invoice.date))),
+      ])),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(context.tr('Close')))],
+    ));
+  }
+
   Future<void> _openSaleDialog(
     BuildContext context, {
     required List<MedicineModel> products,
@@ -524,9 +557,13 @@ class _SalesPageState extends State<SalesPage> {
       await cubit.addRepresentativeSales(
         representativeId: result.representativeId!,
         lines: result.lines,
+        customerName: result.customerName,
+        customerPhone: result.customerPhone,
+        amountCollected: result.amountPaid,
       );
     }
     await productsCubit.load();
     await inventoryCubit.load();
+    if (context.mounted) await context.read<RepresentativeCollectionsCubit>().load();
   }
 }

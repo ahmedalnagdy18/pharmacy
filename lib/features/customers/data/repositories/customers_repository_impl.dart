@@ -44,7 +44,12 @@ class CustomersRepositoryImpl implements CustomersRepository {
   Future<List<CustomerPaymentModel>> getPayments([String? customerId]) =>
       source.getPayments(customerId);
   @override
-  Future<void> createDebt(CustomerDebtModel debt) => source.saveDebt(debt);
+  Future<void> createDebt(CustomerDebtModel debt) async {
+    if (!debt.remainingAmount.isFinite || debt.remainingAmount <= 0) {
+      throw const AppException('Debt amount must be greater than zero.');
+    }
+    await source.saveDebt(debt);
+  }
   @override
   Future<void> recordPayment(CustomerPaymentModel payment) async {
     if (payment.amount <= 0)
