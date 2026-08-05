@@ -62,10 +62,14 @@ class _MyAppState extends State<MyApp> {
             )..load(),
           ),
           BlocProvider(
-            create: (_) => ExpensesCubit(widget.dependencies.expenseUseCases)..load(),
+            create: (_) =>
+                ExpensesCubit(widget.dependencies.expenseUseCases)..load(),
           ),
           BlocProvider(
-            create: (_) => RepresentativeCollectionsCubit(widget.dependencies.representativeCollectionsDataSource)..load(),
+            create: (_) => RepresentativeCollectionsCubit(
+              widget.dependencies.representativeCollectionsDataSource,
+              widget.dependencies.recordRepresentativeCollection,
+            )..load(),
           ),
           BlocProvider(
             create: (_) => RepresentativesCubit(
@@ -87,8 +91,10 @@ class _MyAppState extends State<MyApp> {
               createRepresentativeSale:
                   widget.dependencies.createRepresentativeSale,
               cancelSaleInvoice: widget.dependencies.cancelSaleInvoice,
+              updateSaleInvoice: widget.dependencies.updateSaleInvoice,
+              recordRepresentativeCollection:
+                  widget.dependencies.recordRepresentativeCollection,
               searchAndFilterSales: widget.dependencies.searchAndFilterSales,
-              representativeCollectionsDataSource: widget.dependencies.representativeCollectionsDataSource,
             )..load(),
           ),
           BlocProvider(

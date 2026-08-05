@@ -70,12 +70,27 @@ class AppDependencies {
     purchasesDataSource = PurchasesLocalDataSource(
       Hive.box<PurchaseModel>(HiveBoxes.purchases),
     );
-    expensesDataSource = ExpensesLocalDataSource(Hive.box<ExpenseModel>(HiveBoxes.expenses));
-    representativeCollectionsDataSource = RepresentativeCollectionsLocalDataSource(Hive.box<RepresentativeCollectionModel>(HiveBoxes.representativeCollections));
+    expensesDataSource = ExpensesLocalDataSource(
+      Hive.box<ExpenseModel>(HiveBoxes.expenses),
+    );
+    representativeCollectionsDataSource =
+        RepresentativeCollectionsLocalDataSource(
+          Hive.box<RepresentativeCollectionModel>(
+            HiveBoxes.representativeCollections,
+          ),
+        );
 
-    productsRepository = ProductsRepositoryImpl(productsDataSource);
+    productsRepository = ProductsRepositoryImpl(
+      productsDataSource,
+      salesDataSource: salesDataSource,
+      purchasesDataSource: purchasesDataSource,
+      inventoryDataSource: inventoryDataSource,
+    );
     representativesRepository = RepresentativesRepositoryImpl(
       representativesDataSource,
+      inventoryDataSource: inventoryDataSource,
+      salesDataSource: salesDataSource,
+      collectionsDataSource: representativeCollectionsDataSource,
     );
     inventoryRepository = RepresentativeInventoryRepositoryImpl(
       inventoryDataSource: inventoryDataSource,
@@ -126,6 +141,10 @@ class AppDependencies {
     getSales = GetSalesUseCase(salesRepository);
     createDirectSale = CreateDirectSaleUseCase(salesRepository);
     createRepresentativeSale = CreateRepresentativeSaleUseCase(salesRepository);
+    updateSaleInvoice = UpdateSaleInvoiceUseCase(salesRepository);
+    recordRepresentativeCollection = RecordRepresentativeCollectionUseCase(
+      salesRepository,
+    );
     cancelSaleInvoice = CancelSaleInvoiceUseCase(salesRepository);
     searchAndFilterSales = SearchAndFilterSalesUseCase(salesRepository);
     getDashboardStats = GetDashboardStatsUseCase(dashboardRepository);
@@ -148,7 +167,8 @@ class AppDependencies {
   late final SuppliersLocalDataSource suppliersDataSource;
   late final PurchasesLocalDataSource purchasesDataSource;
   late final ExpensesLocalDataSource expensesDataSource;
-  late final RepresentativeCollectionsLocalDataSource representativeCollectionsDataSource;
+  late final RepresentativeCollectionsLocalDataSource
+  representativeCollectionsDataSource;
 
   late final ProductsRepositoryImpl productsRepository;
   late final RepresentativesRepositoryImpl representativesRepository;
@@ -171,6 +191,9 @@ class AppDependencies {
   late final GetSalesUseCase getSales;
   late final CreateDirectSaleUseCase createDirectSale;
   late final CreateRepresentativeSaleUseCase createRepresentativeSale;
+  late final UpdateSaleInvoiceUseCase updateSaleInvoice;
+  late final RecordRepresentativeCollectionUseCase
+  recordRepresentativeCollection;
   late final CancelSaleInvoiceUseCase cancelSaleInvoice;
   late final SearchAndFilterSalesUseCase searchAndFilterSales;
   late final GetDashboardStatsUseCase getDashboardStats;

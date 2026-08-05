@@ -3,8 +3,6 @@ import 'package:pharmacy/features/sales/data/model/sale_model.dart';
 import 'package:pharmacy/features/sales/domain/usecases/sales_usecases.dart';
 import 'package:pharmacy/features/sales/presentation/cubits/sales_state.dart';
 import 'package:uuid/uuid.dart';
-import 'package:pharmacy/features/representatives/data/data_source/representative_collections_local_data_source.dart';
-import 'package:pharmacy/features/representatives/data/model/representative_collection_model.dart';
 
 class SalesCubit extends Cubit<SalesState> {
   SalesCubit({
@@ -12,16 +10,18 @@ class SalesCubit extends Cubit<SalesState> {
     required this.createDirectSale,
     required this.createRepresentativeSale,
     required this.cancelSaleInvoice,
+    required this.updateSaleInvoice,
+    required this.recordRepresentativeCollection,
     required this.searchAndFilterSales,
-    required this.representativeCollectionsDataSource,
   }) : super(const SalesInitial());
 
   final GetSalesUseCase getSales;
   final CreateDirectSaleUseCase createDirectSale;
   final CreateRepresentativeSaleUseCase createRepresentativeSale;
   final CancelSaleInvoiceUseCase cancelSaleInvoice;
+  final UpdateSaleInvoiceUseCase updateSaleInvoice;
+  final RecordRepresentativeCollectionUseCase recordRepresentativeCollection;
   final SearchAndFilterSalesUseCase searchAndFilterSales;
-  final RepresentativeCollectionsLocalDataSource representativeCollectionsDataSource;
   final _uuid = const Uuid();
 
   Future<void> load() async {
@@ -94,9 +94,16 @@ class SalesCubit extends Cubit<SalesState> {
   }) async {
     emit(const SalesLoading());
     try {
-      final total = lines.fold<double>(0, (sum, line) => sum + line.quantity * line.unitPrice);
-      if (!amountCollected.isFinite || amountCollected < 0 || amountCollected > total) {
-        throw ArgumentError('Collected amount must be between zero and the invoice total.');
+      final total = lines.fold<double>(
+        0,
+        (sum, line) => sum + line.quantity * line.unitPrice,
+      );
+      if (!amountCollected.isFinite ||
+          amountCollected < 0 ||
+          amountCollected > total) {
+        throw ArgumentError(
+          'Collected amount must be between zero and the invoice total.',
+        );
       }
       final invoiceId = _uuid.v4();
       await createRepresentativeSale(
@@ -119,10 +126,52 @@ class SalesCubit extends Cubit<SalesState> {
             .toList(),
       );
       if (amountCollected > 0) {
-        await representativeCollectionsDataSource.save(
-          RepresentativeCollectionModel(id: _uuid.v4(), representativeId: representativeId, invoiceId: invoiceId, amount: amountCollected, date: DateTime.now()),
+        await recordRepresentativeCollection(
+          id: _uuid.v4(),
+          representativeId: representativeId,
+          invoiceId: invoiceId,
+          amount: amountCollected,
         );
       }
+      emit(SalesLoaded(await getSales()));
+    } catch (error) {
+      emit(SalesError(error.toString()));
+      await load();
+    }
+  }
+
+  Future<void> editInvoice({
+    required String invoiceId,
+    required String saleType,
+    required String? representativeId,
+    required List<SaleLine> lines,
+    required String? customerName,
+    required String? customerPhone,
+    required double amountPaid,
+  }) async {
+    emit(const SalesLoading());
+    try {
+      await updateSaleInvoice(
+        invoiceId,
+        lines
+            .map(
+              (line) => SaleModel(
+                id: _uuid.v4(),
+                productId: line.productId,
+                quantity: line.quantity,
+                unitPrice: line.unitPrice,
+                total: line.quantity * line.unitPrice,
+                date: DateTime.now(),
+                saleType: saleType,
+                representativeId: representativeId,
+                invoiceId: invoiceId,
+                customerName: customerName,
+                customerPhone: customerPhone,
+              ),
+            )
+            .toList(),
+        amountPaid: amountPaid,
+      );
       emit(SalesLoaded(await getSales()));
     } catch (error) {
       emit(SalesError(error.toString()));

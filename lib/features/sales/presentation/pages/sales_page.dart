@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pharmacy/core/localization/app_language.dart';
+import 'package:pharmacy/features/dashboard/presentation/cubits/dashboard_cubit.dart';
 import 'package:pharmacy/features/products/data/model/medicine_model.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_cubit.dart';
 import 'package:pharmacy/features/products/presentation/cubits/products_state.dart';
@@ -70,8 +71,13 @@ class _SalesPageState extends State<SalesPage> {
                         inventoryState is RepresentativeInventoryLoaded
                         ? inventoryState.inventory
                         : const <RepresentativeInventoryModel>[];
-                    final collectionsState = context.watch<RepresentativeCollectionsCubit>().state;
-                    final collections = collectionsState is RepresentativeCollectionsLoaded ? collectionsState.items : const <RepresentativeCollectionModel>[];
+                    final collectionsState = context
+                        .watch<RepresentativeCollectionsCubit>()
+                        .state;
+                    final collections =
+                        collectionsState is RepresentativeCollectionsLoaded
+                        ? collectionsState.items
+                        : const <RepresentativeCollectionModel>[];
                     final productById = {
                       for (final product in products) product.id: product,
                     };
@@ -129,7 +135,9 @@ class _SalesPageState extends State<SalesPage> {
                                   context
                                       .read<RepresentativeInventoryCubit>()
                                       .load();
-                                  context.read<RepresentativeCollectionsCubit>().load();
+                                  context
+                                      .read<RepresentativeCollectionsCubit>()
+                                      .load();
                                 },
                                 icon: const Icon(Icons.refresh),
                               ),
@@ -339,9 +347,21 @@ class _SalesPageState extends State<SalesPage> {
                                                       MainAxisSize.min,
                                                   children: [
                                                     IconButton(
-                                                      tooltip: context.tr('View details'),
-                                                      icon: const Icon(Icons.visibility_outlined),
-                                                      onPressed: () => _showInvoiceDetails(context, sale, sales, collections, productById),
+                                                      tooltip: context.tr(
+                                                        'View details',
+                                                      ),
+                                                      icon: const Icon(
+                                                        Icons
+                                                            .visibility_outlined,
+                                                      ),
+                                                      onPressed: () =>
+                                                          _showInvoiceDetails(
+                                                            context,
+                                                            sale,
+                                                            sales,
+                                                            collections,
+                                                            productById,
+                                                          ),
                                                     ),
                                                     IconButton(
                                                       tooltip: 'Print invoice',
@@ -389,6 +409,27 @@ class _SalesPageState extends State<SalesPage> {
                                                             : representativeById[sale
                                                                   .representativeId],
                                                       ),
+                                                    ),
+                                                    IconButton(
+                                                      tooltip: context.tr(
+                                                        'Edit invoice',
+                                                      ),
+                                                      icon: const Icon(
+                                                        Icons.edit_outlined,
+                                                      ),
+                                                      onPressed: () =>
+                                                          _openEditSaleDialog(
+                                                            context,
+                                                            invoice: sale,
+                                                            allSales: sales,
+                                                            products: products,
+                                                            representatives:
+                                                                representatives,
+                                                            inventory:
+                                                                inventory,
+                                                            collections:
+                                                                collections,
+                                                          ),
                                                     ),
                                                     IconButton(
                                                       tooltip: 'Cancel invoice',
@@ -442,8 +483,13 @@ class _SalesPageState extends State<SalesPage> {
       final total = items.fold<double>(0, (sum, item) => sum + item.total);
       final invoiceId = first.invoiceId ?? first.id;
       final paid = first.saleType == SaleType.representative
-          ? collections.where((collection) => collection.invoiceId == invoiceId).fold<double>(0, (sum, collection) => sum + collection.amount)
-          : first.amountPaid ?? total;
+          ? collections
+                .where((collection) => collection.invoiceId == invoiceId)
+                .fold<double>(0, (sum, collection) => sum + collection.amount)
+          : items.fold<double>(
+              0,
+              (sum, item) => sum + (item.amountPaid ?? item.total),
+            );
       final names = items
           .map(
             (item) =>
@@ -499,22 +545,77 @@ class _SalesPageState extends State<SalesPage> {
     }
   }
 
-  void _showInvoiceDetails(BuildContext context, SaleModel invoice, List<SaleModel> allSales, List<RepresentativeCollectionModel> collections, Map<String, MedicineModel> products) {
+  void _showInvoiceDetails(
+    BuildContext context,
+    SaleModel invoice,
+    List<SaleModel> allSales,
+    List<RepresentativeCollectionModel> collections,
+    Map<String, MedicineModel> products,
+  ) {
     final invoiceId = invoice.invoiceId ?? invoice.id;
-    final lines = allSales.where((sale) => (sale.invoiceId ?? sale.id) == invoiceId).toList();
-    final invoiceCollections = collections.where((collection) => collection.invoiceId == invoiceId).toList();
-    showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
-      title: Text('${context.tr('Invoice')} ${AppFormatters.invoiceNumber(invoiceId)}'),
-      content: SizedBox(width: 560, height: 420, child: ListView(children: [
-        Text('${context.tr('Customer')}: ${invoice.customerName ?? '-'} · ${invoice.customerPhone ?? '-'}'),
-        const Divider(),
-        ...lines.map((line) => ListTile(title: Text(products[line.productId]?.name ?? '-'), subtitle: Text('${line.quantity} × ${AppFormatters.currency.format(line.unitPrice)}'), trailing: Text(AppFormatters.currency.format(line.total)))),
-        const Divider(),
-        Text(context.tr('Payment history'), style: Theme.of(context).textTheme.titleMedium),
-        if (invoice.saleType == SaleType.representative) ...invoiceCollections.map((item) => ListTile(leading: const Icon(Icons.payments_outlined), title: Text(AppFormatters.currency.format(item.amount)), subtitle: Text(AppFormatters.dateTime.format(item.date)))) else ListTile(title: Text(AppFormatters.currency.format(invoice.amountPaid ?? invoice.total)), subtitle: Text(AppFormatters.dateTime.format(invoice.date))),
-      ])),
-      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(context.tr('Close')))],
-    ));
+    final lines = allSales
+        .where((sale) => (sale.invoiceId ?? sale.id) == invoiceId)
+        .toList();
+    final invoiceCollections = collections
+        .where((collection) => collection.invoiceId == invoiceId)
+        .toList();
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(
+          '${context.tr('Invoice')} ${AppFormatters.invoiceNumber(invoiceId)}',
+        ),
+        content: SizedBox(
+          width: 560,
+          height: 420,
+          child: ListView(
+            children: [
+              Text(
+                '${context.tr('Customer')}: ${invoice.customerName ?? '-'} · ${invoice.customerPhone ?? '-'}',
+              ),
+              const Divider(),
+              ...lines.map(
+                (line) => ListTile(
+                  title: Text(products[line.productId]?.name ?? '-'),
+                  subtitle: Text(
+                    '${line.quantity} × ${AppFormatters.currency.format(line.unitPrice)}',
+                  ),
+                  trailing: Text(AppFormatters.currency.format(line.total)),
+                ),
+              ),
+              const Divider(),
+              Text(
+                context.tr('Payment history'),
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              if (invoice.saleType == SaleType.representative)
+                ...invoiceCollections.map(
+                  (item) => ListTile(
+                    leading: const Icon(Icons.payments_outlined),
+                    title: Text(AppFormatters.currency.format(item.amount)),
+                    subtitle: Text(AppFormatters.dateTime.format(item.date)),
+                  ),
+                )
+              else
+                ListTile(
+                  title: Text(
+                    AppFormatters.currency.format(
+                      invoice.amountPaid ?? invoice.total,
+                    ),
+                  ),
+                  subtitle: Text(AppFormatters.dateTime.format(invoice.date)),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(context.tr('Close')),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _openSaleDialog(
@@ -564,6 +665,69 @@ class _SalesPageState extends State<SalesPage> {
     }
     await productsCubit.load();
     await inventoryCubit.load();
-    if (context.mounted) await context.read<RepresentativeCollectionsCubit>().load();
+    if (context.mounted)
+      await context.read<RepresentativeCollectionsCubit>().load();
+  }
+
+  Future<void> _openEditSaleDialog(
+    BuildContext context, {
+    required SaleModel invoice,
+    required List<SaleModel> allSales,
+    required List<MedicineModel> products,
+    required List<RepresentativeModel> representatives,
+    required List<RepresentativeInventoryModel> inventory,
+    required List<RepresentativeCollectionModel> collections,
+  }) async {
+    final invoiceId = invoice.invoiceId ?? invoice.id;
+    final invoiceLines = allSales
+        .where((sale) => (sale.invoiceId ?? sale.id) == invoiceId)
+        .toList();
+    final paid = invoice.saleType == SaleType.representative
+        ? collections
+              .where((item) => item.invoiceId == invoiceId)
+              .fold<double>(0, (sum, item) => sum + item.amount)
+        : invoiceLines.fold<double>(
+            0,
+            (sum, item) => sum + (item.amountPaid ?? item.total),
+          );
+    final customerState = context.read<CustomersCubit>().state;
+    final customers = customerState is CustomersLoaded
+        ? customerState.customers
+        : const <CustomerModel>[];
+    final customerDebts = customerState is CustomersLoaded
+        ? customerState.debts
+        : const <CustomerDebtModel>[];
+    final result = await showSaleDialog(
+      context,
+      products: products,
+      representatives: representatives,
+      inventory: inventory,
+      saleType: invoice.saleType,
+      customers: customers,
+      customerDebts: customerDebts,
+      initialSales: invoiceLines,
+      initialAmountPaid: paid,
+    );
+    if (result == null || !context.mounted) return;
+
+    await context.read<SalesCubit>().editInvoice(
+      invoiceId: invoiceId,
+      saleType: invoice.saleType,
+      representativeId: invoice.representativeId,
+      lines: result.lines,
+      customerName: result.customerName,
+      customerPhone: result.customerPhone,
+      amountPaid: result.amountPaid,
+    );
+    if (!context.mounted) return;
+    await context.read<ProductsCubit>().load();
+    if (!context.mounted) return;
+    await context.read<RepresentativeInventoryCubit>().load();
+    if (!context.mounted) return;
+    await context.read<CustomersCubit>().load();
+    if (!context.mounted) return;
+    await context.read<RepresentativeCollectionsCubit>().load();
+    if (!context.mounted) return;
+    await context.read<DashboardCubit>().load();
   }
 }

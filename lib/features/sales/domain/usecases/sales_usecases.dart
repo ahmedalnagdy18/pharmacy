@@ -27,6 +27,42 @@ class CreateRepresentativeSaleUseCase {
       repository.createRepresentativeSales(sales);
 }
 
+class UpdateSaleInvoiceUseCase {
+  const UpdateSaleInvoiceUseCase(this.repository);
+
+  final SalesRepository repository;
+
+  Future<void> call(
+    String invoiceId,
+    List<SaleModel> sales, {
+    required double amountPaid,
+  }) => repository.updateInvoice(
+    invoiceId,
+    sales,
+    amountPaid: amountPaid,
+  );
+}
+
+class RecordRepresentativeCollectionUseCase {
+  const RecordRepresentativeCollectionUseCase(this.repository);
+
+  final SalesRepository repository;
+
+  Future<void> call({
+    required String id,
+    required String representativeId,
+    required String invoiceId,
+    required double amount,
+    String notes = '',
+  }) => repository.recordRepresentativeCollection(
+    id: id,
+    representativeId: representativeId,
+    invoiceId: invoiceId,
+    amount: amount,
+    notes: notes,
+  );
+}
+
 class SearchAndFilterSalesUseCase {
   const SearchAndFilterSalesUseCase(this.repository);
 

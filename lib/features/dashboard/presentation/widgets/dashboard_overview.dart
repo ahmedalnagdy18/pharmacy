@@ -69,7 +69,7 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                             final crossAxisCount = width > 1100
                                 ? 4
                                 : width > 720
-                                ? 2
+                                ? 3
                                 : 1;
                             return GridView.count(
                               crossAxisCount: crossAxisCount,
@@ -98,7 +98,11 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                                   icon: Icons.account_balance_wallet_outlined,
                                 ),
                                 AppStatCard(
-                                  title: context.tr('Today sales'),
+                                  title: _dateFilter == DateFilter.today
+                                      ? context.tr('Today sales')
+                                      : _dateFilter == DateFilter.allTime
+                                      ? context.tr('Total sales')
+                                      : context.tr('Sales'),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.todaySales,
                                   ),
@@ -113,17 +117,23 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                                 ),
                                 AppStatCard(
                                   title: context.tr('Expenses'),
-                                  value: AppFormatters.compactCurrency.format(state.stats.expenses),
+                                  value: AppFormatters.compactCurrency.format(
+                                    state.stats.expenses,
+                                  ),
                                   icon: Icons.money_off_csred_outlined,
                                 ),
                                 AppStatCard(
                                   title: context.tr('Net profit'),
-                                  value: AppFormatters.compactCurrency.format(state.stats.netProfit),
+                                  value: AppFormatters.compactCurrency.format(
+                                    state.stats.netProfit,
+                                  ),
                                   icon: Icons.auto_graph_outlined,
                                 ),
                                 AppStatCard(
                                   title: context.tr('Operating cash flow'),
-                                  value: AppFormatters.compactCurrency.format(state.stats.operatingCashFlow),
+                                  value: AppFormatters.compactCurrency.format(
+                                    state.stats.operatingCashFlow,
+                                  ),
                                   icon: Icons.currency_exchange_outlined,
                                 ),
                                 AppStatCard(
@@ -147,14 +157,18 @@ class _DashboardOverviewState extends State<DashboardOverview> {
                                   icon: Icons.receipt_long_outlined,
                                 ),
                                 AppStatCard(
-                                  title: context.tr("Today's collections"),
+                                  title: _dateFilter == DateFilter.today
+                                      ? context.tr("Today's collections")
+                                      : context.tr('Collections'),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.todayCollections,
                                   ),
                                   icon: Icons.payments_outlined,
                                 ),
                                 AppStatCard(
-                                  title: context.tr("Today's payments"),
+                                  title: _dateFilter == DateFilter.today
+                                      ? context.tr("Today's payments")
+                                      : context.tr('Payments'),
                                   value: AppFormatters.compactCurrency.format(
                                     state.stats.todayPayments,
                                   ),

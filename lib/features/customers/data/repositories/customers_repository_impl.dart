@@ -30,10 +30,15 @@ class CustomersRepositoryImpl implements CustomersRepository {
   @override
   Future<void> deleteCustomer(String id) async {
     final debts = await source.getDebts(id);
-    if (debts.any((x) => x.status == DebtStatus.pending))
+    final payments = await source.getPayments(id);
+    final sales = (await salesDataSource.getAll()).where(
+      (item) => item.customerId == id,
+    );
+    if (debts.isNotEmpty || payments.isNotEmpty || sales.isNotEmpty) {
       throw const AppException(
-        'Customers with outstanding debts cannot be deleted.',
+        'Customers with sales, debts, or payments cannot be deleted.',
       );
+    }
     await source.deleteCustomer(id);
   }
 
@@ -50,6 +55,7 @@ class CustomersRepositoryImpl implements CustomersRepository {
     }
     await source.saveDebt(debt);
   }
+
   @override
   Future<void> recordPayment(CustomerPaymentModel payment) async {
     if (payment.amount <= 0)

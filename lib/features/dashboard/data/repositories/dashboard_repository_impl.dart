@@ -30,7 +30,8 @@ class DashboardRepositoryImpl implements DashboardRepository {
   final SuppliersLocalDataSource suppliersDataSource;
   final ExpensesLocalDataSource expensesDataSource;
   final PurchasesLocalDataSource purchasesDataSource;
-  final RepresentativeCollectionsLocalDataSource representativeCollectionsDataSource;
+  final RepresentativeCollectionsLocalDataSource
+  representativeCollectionsDataSource;
 
   @override
   Future<DashboardStatsModel> getStats({DateTime? date}) async {
@@ -44,7 +45,8 @@ class DashboardRepositoryImpl implements DashboardRepository {
     final supplierPayments = await suppliersDataSource.getPayments();
     final expenses = await expensesDataSource.getAll();
     final purchases = await purchasesDataSource.getAll();
-    final representativeCollections = await representativeCollectionsDataSource.getAll();
+    final representativeCollections = await representativeCollectionsDataSource
+        .getAll();
 
     final totalWarehouseQuantity = products.fold<int>(
       0,
@@ -64,34 +66,60 @@ class DashboardRepositoryImpl implements DashboardRepository {
                     sale.date.day == now.day,
               )
               .toList();
-    final todaySales = filteredSales
+    final todaySales = filteredSales.fold<double>(
+      0,
+      (sum, sale) => sum + sale.total,
+    );
+    final monthlySales = sales
         .where(
-          (sale) =>
-              sale.date.year == now.year &&
-              sale.date.month == now.month &&
-              sale.date.day == now.day,
+          (sale) => sale.date.year == now.year && sale.date.month == now.month,
         )
         .fold<double>(0, (sum, sale) => sum + sale.total);
-    final monthlySales =
-        (date == null
-                ? sales
-                : sales.where(
-                    (sale) =>
-                        sale.date.year == now.year &&
-                        sale.date.month == now.month,
-                  ))
-            .fold<double>(0, (sum, sale) => sum + sale.total);
 
     final productById = {for (final product in products) product.id: product};
-    final selectedExpenses = expenses.where((expense) => date == null || (expense.date.year == now.year && expense.date.month == now.month && expense.date.day == now.day)).toList();
-    final salesProfit = filteredSales.fold<double>(0, (sum, sale) => sum + sale.total - (sale.unitCost > 0 ? sale.unitCost : (productById[sale.productId]?.purchasePrice ?? 0)) * sale.quantity);
-    final totalExpenses = selectedExpenses.fold<double>(0, (sum, expense) => sum + expense.amount);
-    final matchesPeriod = (DateTime value) => date == null || (value.year == now.year && value.month == now.month && value.day == now.day);
-    final directCash = filteredSales.where((sale) => sale.saleType == SaleType.direct).fold<double>(0, (sum, sale) => sum + (sale.amountPaid ?? 0));
-    final customerCash = customerPayments.where((x) => matchesPeriod(x.date)).fold<double>(0, (sum, x) => sum + x.amount);
-    final representativeCash = representativeCollections.where((x) => matchesPeriod(x.date)).fold<double>(0, (sum, x) => sum + x.amount);
-    final purchaseCash = purchases.where((x) => matchesPeriod(x.date)).fold<double>(0, (sum, x) => sum + x.paidAmount);
-    final supplierCash = supplierPayments.where((x) => matchesPeriod(x.date)).fold<double>(0, (sum, x) => sum + x.amount);
+    final selectedExpenses = expenses
+        .where(
+          (expense) =>
+              date == null ||
+              (expense.date.year == now.year &&
+                  expense.date.month == now.month &&
+                  expense.date.day == now.day),
+        )
+        .toList();
+    final salesProfit = filteredSales.fold<double>(
+      0,
+      (sum, sale) =>
+          sum +
+          sale.total -
+          (sale.unitCost > 0
+                  ? sale.unitCost
+                  : (productById[sale.productId]?.purchasePrice ?? 0)) *
+              sale.quantity,
+    );
+    final totalExpenses = selectedExpenses.fold<double>(
+      0,
+      (sum, expense) => sum + expense.amount,
+    );
+    final matchesPeriod = (DateTime value) =>
+        date == null ||
+        (value.year == now.year &&
+            value.month == now.month &&
+            value.day == now.day);
+    final directCash = filteredSales
+        .where((sale) => sale.saleType == SaleType.direct)
+        .fold<double>(0, (sum, sale) => sum + (sale.amountPaid ?? 0));
+    final customerCash = customerPayments
+        .where((x) => matchesPeriod(x.date))
+        .fold<double>(0, (sum, x) => sum + x.amount);
+    final representativeCash = representativeCollections
+        .where((x) => matchesPeriod(x.date))
+        .fold<double>(0, (sum, x) => sum + x.amount);
+    final purchaseCash = purchases
+        .where((x) => matchesPeriod(x.date))
+        .fold<double>(0, (sum, x) => sum + x.paidAmount);
+    final supplierCash = supplierPayments
+        .where((x) => matchesPeriod(x.date))
+        .fold<double>(0, (sum, x) => sum + x.amount);
     final representativeById = {
       for (final representative in representatives)
         representative.id: representative,
@@ -193,7 +221,13 @@ class DashboardRepositoryImpl implements DashboardRepository {
           .fold<double>(0, (sum, x) => sum + x.amount),
       expenses: totalExpenses,
       netProfit: salesProfit - totalExpenses,
-      operatingCashFlow: directCash + customerCash + representativeCash - purchaseCash - supplierCash - totalExpenses,
+      operatingCashFlow:
+          directCash +
+          customerCash +
+          representativeCash -
+          purchaseCash -
+          supplierCash -
+          totalExpenses,
     );
   }
 }

@@ -29,7 +29,10 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
       (sum, item) => sum + item.total,
     );
     final invoicePaid = firstPurchase.paidAmount;
-    if (invoicePaid < 0 || invoicePaid > invoiceTotal) {
+    if (!invoiceTotal.isFinite ||
+        !invoicePaid.isFinite ||
+        invoicePaid < 0 ||
+        invoicePaid > invoiceTotal) {
       throw const AppException('Check purchase quantities and amounts.');
     }
     if (!(await suppliersSource.getSuppliers()).any(
@@ -40,7 +43,11 @@ class PurchasesRepositoryImpl implements PurchasesRepository {
     for (final purchase in purchases) {
       if (purchase.supplierId != firstPurchase.supplierId ||
           purchase.quantity <= 0 ||
-          purchase.unitCost < 0) {
+          !purchase.unitCost.isFinite ||
+          purchase.unitCost < 0 ||
+          !purchase.total.isFinite ||
+          (purchase.total - purchase.quantity * purchase.unitCost).abs() >
+              0.000001) {
         throw const AppException('Check purchase quantities and amounts.');
       }
       if (await productsSource.getById(purchase.productId) == null) {

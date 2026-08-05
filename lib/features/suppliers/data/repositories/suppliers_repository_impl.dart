@@ -26,11 +26,18 @@ class SuppliersRepositoryImpl implements SuppliersRepository {
   @override
   Future<void> delete(String id) async {
     final debts = await source.getDebts(id);
-    if (debts.any((x) => x.status == DebtStatus.pending)) {
-      throw const AppException('Suppliers with outstanding debts cannot be deleted.');
+    final payments = await source.getPayments(id);
+    final purchases = (await purchasesDataSource.getAll()).where(
+      (item) => item.supplierId == id,
+    );
+    if (debts.isNotEmpty || payments.isNotEmpty || purchases.isNotEmpty) {
+      throw const AppException(
+        'Suppliers with purchases, debts, or payments cannot be deleted.',
+      );
     }
     await source.deleteSupplier(id);
   }
+
   @override
   Future<List<SupplierDebtModel>> debts([String? id]) => source.getDebts(id);
   @override
@@ -43,6 +50,7 @@ class SuppliersRepositoryImpl implements SuppliersRepository {
     }
     await source.saveDebt(debt);
   }
+
   @override
   Future<void> payment(SupplierPaymentModel x) async {
     if (x.amount <= 0)

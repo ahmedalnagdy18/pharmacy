@@ -257,12 +257,12 @@ class _DashboardPageState extends State<DashboardPage> {
                       ),
                       child: compact
                           ? (selected
-                              ? destination.selectedIcon ?? destination.icon
-                              : destination.icon)
+                                ? destination.selectedIcon
+                                : destination.icon)
                           : Row(
                               children: [
                                 selected
-                                    ? destination.selectedIcon ?? destination.icon
+                                    ? destination.selectedIcon
                                     : destination.icon,
                                 const SizedBox(width: 12),
                                 Expanded(child: destination.label),

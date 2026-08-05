@@ -33,6 +33,8 @@ Future<SaleFormResult?> showSaleDialog(
   required String saleType,
   required List<CustomerModel> customers,
   required List<CustomerDebtModel> customerDebts,
+  List<SaleModel> initialSales = const [],
+  double initialAmountPaid = 0,
 }) => showDialog(
   context: context,
   builder: (_) => SaleDialog(
@@ -42,6 +44,8 @@ Future<SaleFormResult?> showSaleDialog(
     initialSaleType: saleType,
     customers: customers,
     customerDebts: customerDebts,
+    initialSales: initialSales,
+    initialAmountPaid: initialAmountPaid,
   ),
 );
 
@@ -53,6 +57,8 @@ class SaleDialog extends StatefulWidget {
     required this.initialSaleType,
     required this.customers,
     required this.customerDebts,
+    this.initialSales = const [],
+    this.initialAmountPaid = 0,
     super.key,
   });
   final List<MedicineModel> products;
@@ -61,14 +67,20 @@ class SaleDialog extends StatefulWidget {
   final String initialSaleType;
   final List<CustomerModel> customers;
   final List<CustomerDebtModel> customerDebts;
+  final List<SaleModel> initialSales;
+  final double initialAmountPaid;
+  bool get isEditing => initialSales.isNotEmpty;
   @override
   State<SaleDialog> createState() => _SaleDialogState();
 }
 
 class _SaleLineInput {
-  _SaleLineInput({required this.productId, required String price})
-    : quantity = TextEditingController(text: '1'),
-      unitPrice = TextEditingController(text: price);
+  _SaleLineInput({
+    required this.productId,
+    required String price,
+    String quantity = '1',
+  }) : quantity = TextEditingController(text: quantity),
+       unitPrice = TextEditingController(text: price);
   String? productId;
   final TextEditingController quantity, unitPrice;
   void dispose() {
@@ -90,9 +102,26 @@ class _SaleDialogState extends State<SaleDialog> {
   void initState() {
     super.initState();
     _saleType = widget.initialSaleType;
-    _paid.text = '0';
-    _representativeId = widget.representatives.firstOrNull?.id;
-    _addLine();
+    _paid.text = widget.initialAmountPaid.toString();
+    _representativeId =
+        widget.initialSales.firstOrNull?.representativeId ??
+        widget.representatives.firstOrNull?.id;
+    final first = widget.initialSales.firstOrNull;
+    _customerName.text = first?.customerName ?? '';
+    _customerPhone.text = first?.customerPhone ?? '';
+    if (widget.initialSales.isEmpty) {
+      _addLine();
+    } else {
+      for (final sale in widget.initialSales) {
+        _lines.add(
+          _SaleLineInput(
+            productId: sale.productId,
+            price: sale.unitPrice.toString(),
+            quantity: sale.quantity.toString(),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -108,11 +137,15 @@ class _SaleDialogState extends State<SaleDialog> {
 
   List<MedicineModel> get _availableProducts {
     if (_saleType == SaleType.direct) return widget.products;
+    final originalProductIds = widget.initialSales
+        .map((sale) => sale.productId)
+        .toSet();
     final ids = widget.inventory
         .where(
           (item) =>
               item.representativeId == _representativeId &&
-              item.remainingQuantity > 0,
+              (item.remainingQuantity > 0 ||
+                  originalProductIds.contains(item.productId)),
         )
         .map((item) => item.productId)
         .toSet();
@@ -121,17 +154,30 @@ class _SaleDialogState extends State<SaleDialog> {
         .toList();
   }
 
+  int _originalQuantity(String productId) => widget.initialSales
+      .where((sale) => sale.productId == productId)
+      .fold<int>(0, (sum, sale) => sum + sale.quantity);
+
+  int _requestedQuantity(String productId) => _lines
+      .where((line) => line.productId == productId)
+      .fold<int>(
+        0,
+        (sum, line) => sum + (int.tryParse(line.quantity.text) ?? 0),
+      );
+
   int _availableQuantity(String productId) => _saleType == SaleType.direct
-      ? widget.products.firstWhere((p) => p.id == productId).quantity
-      : widget.inventory
-                .where(
-                  (item) =>
-                      item.representativeId == _representativeId &&
-                      item.productId == productId,
-                )
-                .firstOrNull
-                ?.remainingQuantity ??
-            0;
+      ? widget.products.firstWhere((p) => p.id == productId).quantity +
+            _originalQuantity(productId)
+      : (widget.inventory
+                    .where(
+                      (item) =>
+                          item.representativeId == _representativeId &&
+                          item.productId == productId,
+                    )
+                    .firstOrNull
+                    ?.remainingQuantity ??
+                0) +
+            _originalQuantity(productId);
   double get _total => _lines.fold(
     0,
     (sum, line) =>
@@ -160,7 +206,11 @@ class _SaleDialogState extends State<SaleDialog> {
       }
     }
     return AlertDialog(
-      title: Text(context.localized('Create sale', 'إنشاء عملية بيع')),
+      title: Text(
+        widget.isEditing
+            ? context.tr('Edit invoice')
+            : context.localized('Create sale', 'إنشاء عملية بيع'),
+      ),
       content: SizedBox(
         width: MediaQuery.sizeOf(context).width < 720
             ? MediaQuery.sizeOf(context).width * .9
@@ -185,11 +235,16 @@ class _SaleDialogState extends State<SaleDialog> {
                     ),
                   ],
                   selected: {_saleType},
-                  onSelectionChanged: (value) => setState(() {
-                    _saleType = value.first;
-                    _lines.clear();
-                    _addLine();
-                  }),
+                  onSelectionChanged: widget.isEditing
+                      ? null
+                      : (value) => setState(() {
+                          _saleType = value.first;
+                          for (final line in _lines) {
+                            line.dispose();
+                          }
+                          _lines.clear();
+                          _addLine();
+                        }),
                 ),
                 const SizedBox(height: 16),
                 if (_saleType == SaleType.representative) ...[
@@ -206,11 +261,16 @@ class _SaleDialogState extends State<SaleDialog> {
                           ),
                         )
                         .toList(),
-                    onChanged: (value) => setState(() {
-                      _representativeId = value;
-                      _lines.clear();
-                      _addLine();
-                    }),
+                    onChanged: widget.isEditing
+                        ? null
+                        : (value) => setState(() {
+                            _representativeId = value;
+                            for (final line in _lines) {
+                              line.dispose();
+                            }
+                            _lines.clear();
+                            _addLine();
+                          }),
                     validator: (value) => value == null ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
@@ -219,6 +279,7 @@ class _SaleDialogState extends State<SaleDialog> {
                 // details remain available to the business if the rep leaves.
                 ...[
                   Autocomplete<CustomerModel>(
+                    initialValue: TextEditingValue(text: _customerName.text),
                     displayStringForOption: (x) => '${x.name} (${x.phone})',
                     optionsBuilder: (value) => widget.customers.where(
                       (x) =>
@@ -304,7 +365,9 @@ class _SaleDialogState extends State<SaleDialog> {
                         Expanded(
                           child: TextFormField(
                             controller: line.quantity,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
                             inputFormatters: [
                               FilteringTextInputFormatter.digitsOnly,
                             ],
@@ -314,7 +377,7 @@ class _SaleDialogState extends State<SaleDialog> {
                               return quantity == null ||
                                       quantity <= 0 ||
                                       (line.productId != null &&
-                                          quantity >
+                                          _requestedQuantity(line.productId!) >
                                               _availableQuantity(
                                                 line.productId!,
                                               ))
@@ -334,10 +397,14 @@ class _SaleDialogState extends State<SaleDialog> {
                               ),
                             ],
                             onChanged: (_) => setState(() {}),
-                            validator: (value) =>
-                                double.tryParse(value ?? '') == null
-                                ? 'Invalid'
-                                : null,
+                            validator: (value) {
+                              final price = double.tryParse(value ?? '');
+                              return price == null ||
+                                      !price.isFinite ||
+                                      price < 0
+                                  ? 'Invalid'
+                                  : null;
+                            },
                           ),
                         ),
                         IconButton(
@@ -366,24 +433,28 @@ class _SaleDialogState extends State<SaleDialog> {
                   label: Text(context.localized('Add medicine', 'إضافة منتج')),
                 ),
                 TextFormField(
-                    controller: _paid,
-                    decoration: InputDecoration(
-                      labelText: context.localized(
-                        'Amount paid',
-                        'المبلغ المدفوع',
-                      ),
+                  controller: _paid,
+                  decoration: InputDecoration(
+                    labelText: context.localized(
+                      'Amount paid',
+                      'المبلغ المدفوع',
                     ),
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                    ],
-                    validator: (value) {
-                      final amount = double.tryParse(value ?? '');
-                      return amount == null || amount < 0 || amount > _total
-                          ? 'Enter an amount up to ${_total.toStringAsFixed(2)}'
-                          : null;
-                    },
                   ),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                  ],
+                  readOnly:
+                      widget.isEditing && _saleType == SaleType.representative,
+                  validator: (value) {
+                    final amount = double.tryParse(value ?? '');
+                    return amount == null || amount < 0 || amount > _total
+                        ? 'Enter an amount up to ${_total.toStringAsFixed(2)}'
+                        : null;
+                  },
+                ),
               ],
             ),
           ),
@@ -396,7 +467,11 @@ class _SaleDialogState extends State<SaleDialog> {
         ),
         FilledButton(
           onPressed: _submit,
-          child: Text(context.localized('Save sale', 'حفظ البيع')),
+          child: Text(
+            widget.isEditing
+                ? context.tr('Save changes')
+                : context.localized('Save sale', 'حفظ البيع'),
+          ),
         ),
       ],
     );

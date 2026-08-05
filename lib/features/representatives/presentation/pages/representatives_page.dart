@@ -374,7 +374,6 @@ class RepresentativesPage extends StatelessWidget {
         representativeId: representative.id,
         invoiceId: selected.id,
         amount: double.parse(amount.text),
-        outstanding: selected.outstanding,
       );
   }
 
